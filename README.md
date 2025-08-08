@@ -8,7 +8,7 @@ It listens to your voice, analyzes your game state (via GSI + screenshots), and 
 
 ## 🎥 Demo
 
-<video src="clutch_demo.mp4" controls width="100%"></video>
+[<video src="clutch_demo.mp4" controls width="100%"></video>](https://github.com/user-attachments/assets/24c870cd-2311-4cff-87d2-29ada9d58f13)
 
 ---
 
