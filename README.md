@@ -6,6 +6,12 @@ It listens to your voice, analyzes your game state (via GSI + screenshots), and 
 
 ---
 
+## 🎥 Demo
+
+[![Watch the demo](https://img.youtube.com/vi/oFUC1WV7IRg/hqdefault.jpg)](https://youtu.be/oFUC1WV7IRg)
+
+---
+
 ## ✨ Features
 
 - 🔊 Wakeword detection — just say **"Hey Jarvis"**
