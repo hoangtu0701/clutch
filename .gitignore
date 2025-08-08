@@ -1,0 +1,26 @@
+# VSCode settings
+.vscode/
+
+# Ignore embedded Python (users install their own Python or you provide setup instructions)
+embedded_python/
+
+# Ignore models (you can host them separately or instruct how to download them)
+models/
+
+# Ignore venv and other big, private, or system stuff
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.DS_Store
+*.swp
+*.swo
+*.bak
+
+# Ignore any build artifacts
+CLUTCH_APP/
+
+# Ignore env file
+.env
