@@ -260,6 +260,26 @@ def is_cs2_window_visible():
     print("CS2 window not found or not visible.")
     return False
 
+def get_screen_size():
+    cam = bettercam.create(output_idx=0)
+    frame = cam.grab()
+    if frame is None:
+        raise RuntimeError("Could not detect screen size.")
+    return frame.shape[1], frame.shape[0]  
+
+def grab_region(x_frac, y_frac, w_frac, h_frac, screen_w, screen_h):
+    left   = int(screen_w * x_frac)
+    top    = int(screen_h * y_frac)
+    right  = left + int(screen_w * w_frac)
+    bottom = top + int(screen_h * h_frac)
+    cam = bettercam.create(output_idx=0)
+    frame = cam.grab(region=(left, top, right, bottom))
+    if frame is None:
+        raise RuntimeError(f"Could not grab region ({left},{top},{right},{bottom}).")
+    if frame.shape[2] == 4:
+        frame = frame[:, :, :3]
+    return cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
 def frame_to_model_base64(frame):
     try:
         success, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
@@ -276,19 +296,30 @@ def frame_to_model_base64(frame):
         print("Error during screenshot encoding:", e)
         return None
 
-def capture_cs2_image():
+def capture_cs2_images():
     if not is_cs2_window_visible():
-        return None
+        return []
+    try:
+        # Detect real resolution
+        screen_w, screen_h = get_screen_size()
 
-    # Capture the main display screen
-    cam = bettercam.create(output_idx = 0)  
-    frame = cam.grab()
+        # Capture regions based on fractions
+        overall    = grab_region(0.0, 0.0, 1.0, 1.0, screen_w, screen_h)
+        radar      = grab_region(0.0, 0.0, 0.2, 0.3, screen_w, screen_h)
+        scoreboard = grab_region(0.2, 0.0, 0.6, 0.12, screen_w, screen_h)
 
-    if frame is None:
-        print("Could not grab screenshot.")
-        return None
+        # Prepare payloads
+        payloads = []
+        for f in (overall, radar, scoreboard):
+            p = frame_to_model_base64(f) if f is not None else None
+            if p:
+                payloads.append(p)
 
-    return frame_to_model_base64(frame)
+        print(f"[DONE] Prepared {len(payloads)} image payload(s) for model.")
+        return payloads
+    except Exception as e:
+        print("Error during multi-image capture:", e)
+        return []
 
 
 
@@ -403,41 +434,50 @@ class STTWorker(QThread):
         latest_gsi = latest_gsi_state.copy() if latest_gsi_state else {}
 
         # 3. Capture CS2 screenshot (returns model-ready payload or None)
-        image_payload = capture_cs2_image()
+        image_payloads = capture_cs2_images()
 
-        # 4. Construct the prompt for model
+        # 4. Construct the dynamic prompt for model
         system_prompt = (
             "You are Clutch — a world-class but friendly and funny Counter-Strike 2 coach that can also chit chat.\n\n"
             "- Give short (max 3 sentences and can be spoken in 10-15 seconds max), real-time coaching using actual CS2 knowledge only.\n"
             "- Speak like a sharp Tier-1 IGL or ex-pro teammate — never a generic AI.\n"
             "- Prioritize round win > player survival > economy impact.\n"
             "- Use full words — never abbreviations or slang.\n"
-            "- Use visual info from the image **only** if you're confident in what you see.\n"
             "- Do NOT make up callouts, lineups, or gameplay mechanics.\n"
-            "- Avoid vague advice like 'stay calm' or 'check corners'.\n\n"
             "Every answer should be actionable, realistic, and grounded — a call or insight the player can immediately use."
         )
 
-        # 5. Construct the dynamic prompt for user and user content for model
+        image_analysis_prompt = """
+        You will also receive up to three labeled images in this order:
+        1. **Full POV** - The user's current full in-game view. Use this to determine the exact location of the user on the map (you will know the map name from GSI data). Look for map-specific landmarks, textures, and surroundings to pinpoint the user's position.
+        2. **Minimap** - The radar circle. The user is always the point in the center of the radar circle. Use this to refine the user's location by understanding their position relative to surroundings. Optionally, if visible, detect red circular dots (enemy positions) and use them to infer enemy locations relative to the user.
+        3. **Scoreboard With Remaining Players Alive** - Ignore score details (GSI provides that). Focus on the left (CT) and right (T) sides for player status:
+        - **Number mode**: If a number is displayed with the word "Alive" beneath, use it directly for remaining players in each team. Left side = CT, right side = T.
+        - **Avatar mode**: If player avatars are shown, count bright avatars as alive and greyed-out avatars as dead. Left side = CT, right side = T.
+        Use the information from these images to support your tactical reasoning and make your advice as precise as possible.
+        """
+
+        if image_payloads:
+            system_prompt += "\n\n" + image_analysis_prompt
+
+        # 5. Construct the dynamic content for user
         self.prompt = f"""
             **User's Input:**
             \"{self.user_input}\"
 
             **Game State:**
             {json.dumps(latest_gsi, indent=2)}
-
-            {f"Use the attached image for additional info only if it clearly shows useful in-game info like player position, radar, enemies, crosshair, or utility. Do not guess." if image_payload else ""}
-
             """.strip()
-
-        print(f"User's prompt:\n{self.prompt}")
 
         user_content = [
             { "type": "input_text", "text": self.prompt }
         ]
 
-        if image_payload:
-            user_content.append(image_payload)
+        if image_payloads:
+            labels = ["Full POV", "Minimap", "Scoreboard With Remaining Players Alive"]
+            for label, img_payload in zip(labels, image_payloads):
+                user_content.append({ "type": "input_text", "text": f"[{label}]" })
+                user_content.append(img_payload)
 
         # --- Run the brain, feed response from model chunk by chunk into the TTS, and make it speak ASAP ---
 
