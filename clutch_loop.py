@@ -306,11 +306,12 @@ def capture_cs2_images():
         # Capture regions based on fractions
         overall    = grab_region(0.0, 0.0, 1.0, 1.0, screen_w, screen_h)
         radar      = grab_region(0.0, 0.0, 0.2, 0.3, screen_w, screen_h)
-        scoreboard = grab_region(0.2, 0.0, 0.6, 0.12, screen_w, screen_h)
+        ct_alive   = grab_region(0.2, 0.0, 0.27, 0.12, screen_w, screen_h)
+        t_alive    = grab_region(0.53, 0.0, 0.27, 0.12, screen_w, screen_h)
 
         # Prepare payloads
         payloads = []
-        for f in (overall, radar, scoreboard):
+        for f in (overall, radar, ct_alive, t_alive):
             p = frame_to_model_base64(f) if f is not None else None
             if p:
                 payloads.append(p)
@@ -448,12 +449,11 @@ class STTWorker(QThread):
         )
 
         image_analysis_prompt = """
-        You will also receive up to three labeled images in this order:
+        You will also receive up to four labeled images in this order:
         1. **Full POV** - The user's current full in-game view. Use this to determine the exact location of the user on the map (you will know the map name from GSI data). Look for map-specific landmarks, textures, and surroundings to pinpoint the user's position.
         2. **Minimap** - The radar circle. The user is always the point in the center of the radar circle. Use this to refine the user's location by understanding their position relative to surroundings. Optionally, if visible, detect red circular dots (enemy positions) and use them to infer enemy locations relative to the user.
-        3. **Scoreboard With Remaining Players Alive** - Ignore score details (GSI provides that). Focus on the left (CT) and right (T) sides for player status:
-        - **Number mode**: If a number is displayed with the word "Alive" beneath, use it directly for remaining players in each team. Left side = CT, right side = T.
-        - **Avatar mode**: If player avatars are shown, count bright avatars as alive and greyed-out avatars as dead. Left side = CT, right side = T.
+        3. **CT Players Alive** - Shows the number of living CT players (big blue number). If avatars are shown instead, count bright avatars as alive and greyed-out avatars as dead.
+        4. **T Players Alive** - Shows the number of living T players (big yellow number). If avatars are shown instead, count bright avatars as alive and greyed-out avatars as dead.
         Use the information from these images to support your tactical reasoning and make your advice as precise as possible.
         """
 
@@ -474,7 +474,7 @@ class STTWorker(QThread):
         ]
 
         if image_payloads:
-            labels = ["Full POV", "Minimap", "Scoreboard With Remaining Players Alive"]
+            labels = ["Full POV", "Minimap", "CT Players Alive", "T Players Alive" ]
             for label, img_payload in zip(labels, image_payloads):
                 user_content.append({ "type": "input_text", "text": f"[{label}]" })
                 user_content.append(img_payload)
