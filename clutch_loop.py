@@ -11,6 +11,7 @@ if libs_path not in sys.path:
 import json
 import threading
 import shutil
+import torch
 import filecmp
 import time
 import base64
@@ -22,7 +23,7 @@ import requests
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from RealtimeSTT import AudioToTextRecorder
-from RealtimeTTS import TextToAudioStream, CoquiEngine
+from RealtimeTTS import TextToAudioStream, CoquiEngine, PiperEngine, PiperVoice
 from flask import Flask, request
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -340,20 +341,38 @@ class STTWorker(QThread):
         self.prev_text = ""
         self.recorder = None
         self.current_stream = None
+        self.use_piper = True
 
-        # Initialize the TTS engine, too
-        model_path = os.path.join(base_dir, "models", "Coqui")
-        engine = CoquiEngine(
-            specific_model=model_path,
-            voice="Damien Black",
-            speed=1.1,
-            thread_count=5,
-            temperature=0.95,
-            repetition_penalty=5.0,
-            top_k=30,
-            top_p=0.92,
-            device="cuda"
-        )
+        # Initialize the TTS engine depending on remaining VRAM
+        if torch.cuda.is_available():
+            try:
+                free_mem, total_mem = torch.cuda.mem_get_info(0)
+                total_gb = total_mem / (1024 ** 3)
+                print(f"[VRAM] Total: {total_gb:.2f} GB")
+                self.use_piper = total_gb < 12.0
+            except Exception as e:
+                print("VRAM check failed, defaulting to Piper:", e)
+        if self.use_piper:
+            print("🔊 Using Piper TTS (low-VRAM mode)")
+            piper_bin   = os.path.join(base_dir, "models", "Piper", "piper", "piper.exe")
+            model_file  = os.path.join(base_dir, "models", "Piper", "en_US-norman-medium.onnx")
+            config_file = os.path.join(base_dir, "models", "Piper", "en_US-norman-medium.onnx.json")
+            voice  = PiperVoice(model_file=model_file, config_file=config_file)
+            engine = PiperEngine(piper_path=piper_bin, voice=voice, debug=False)
+        else:
+            print("🔊 Using Coqui XTTS (high-VRAM mode)")
+            model_path = os.path.join(base_dir, "models", "Coqui")
+            engine = CoquiEngine(
+                specific_model=model_path,
+                voice="Damien Black",
+                speed=1.1,
+                thread_count=5,
+                temperature=0.95,
+                repetition_penalty=5.0,
+                top_k=30,
+                top_p=0.92,
+                device="cuda"
+            )
         self.tts_stream = TextToAudioStream(engine=engine)
 
         # Warm up TTS engine with a silent dummy token
@@ -362,9 +381,9 @@ class STTWorker(QThread):
             self.tts_stream.play_async()
             time.sleep(1.0)  
             self.tts_stream.stop()
-            print("Warmed up Coqui TTS...")
+            print("Warmed up TTS engine...")
         except Exception as e:
-            print("TTS warm-up failed:", e)
+            print("TTS engine warm-up failed:", e)
 
     def on_wakeword_detected(self):
         # Stop TTS if playing
@@ -498,20 +517,64 @@ class STTWorker(QThread):
             return
         self.current_stream = stream
         
-        # 3. Feed the response stream into TTS
+        # 3. Feed the response stream into the correct TTS
         print(f"Receiving chunks from model...")
-        started = False
-        try:
-            for event in stream:
-                if event.type == "response.output_text.delta":
-                    token = event.delta
-                    self.tts_stream.feed(token)
-                    if not started:
-                        self.tts_stream.play_async()
-                        started = True
-        except Exception as e:
-            print("Error during stream playback:")
-            traceback.print_exc()
+        if self.use_piper:
+            started = False
+            buf = []
+            buf_chars = 0
+            last_flush = time.monotonic()
+            PIPER_MAX_CHARS = 60
+            PIPER_MAX_WAIT  = 0.6
+            PIPER_PUNCT     = (".", "!", "?", "…", ":", ";", "\n")
+            def flush_buffer():
+                nonlocal buf, buf_chars, started, last_flush
+                if not buf:
+                    last_flush = time.monotonic()
+                    return
+                text = "".join(buf).strip()
+                buf.clear()
+                buf_chars = 0
+                if not text:
+                    last_flush = time.monotonic()
+                    return
+                self.tts_stream.feed(text)
+                if not started:
+                    self.tts_stream.play_async()
+                    started = True
+                last_flush = time.monotonic()
+            try:
+                for event in stream:
+                    if event.type == "response.output_text.delta":
+                        token = event.delta
+                        buf.append(token)
+                        buf_chars += len(token)
+
+                        if (
+                            (token and token[-1] in PIPER_PUNCT) or
+                            (buf_chars >= PIPER_MAX_CHARS) or
+                            ((time.monotonic() - last_flush) > PIPER_MAX_WAIT)
+                        ):
+                            flush_buffer()
+                flush_buffer()
+            except Exception:
+                print("Error during stream playback (Piper):")
+                traceback.print_exc()
+        else:
+            started = False
+            try:
+                feed = self.tts_stream.feed          
+                play = self.tts_stream.play_async
+                for event in stream:
+                    if event.type == "response.output_text.delta":
+                        token = event.delta
+                        feed(token)
+                        if not started:
+                            play()
+                            started = True
+            except Exception:
+                print("Error during stream playback (Coqui):")
+                traceback.print_exc()
 
     def run(self):
         recorder_config = {
