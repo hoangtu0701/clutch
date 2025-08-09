@@ -444,7 +444,7 @@ class STTWorker(QThread):
             "- Speak like a sharp Tier-1 IGL or ex-pro teammate — never a generic AI.\n"
             "- Prioritize round win > player survival > economy impact.\n"
             "- Use full words — never abbreviations or slang.\n"
-            "- Never invent callouts, lineups, or mechanics.\n"
+            "- Never invent callouts, lineups, or mechanics. Use only information you know.\n"
             "Every response must be instantly usable and realistic."
         )
 
