@@ -556,12 +556,20 @@ class STTWorker(QThread):
             system_prompt += "\n" + image_analysis_prompt
 
         # 5. Construct the dynamic content for user
+        round_timer_txt = get_round_timer_text()
+
+        if round_timer_txt and round_timer_txt != "—":
+            timer_str = f"\n\n**Time Left in Round:** {round_timer_txt}"
+        else:
+            timer_str = ""
+
         self.prompt = f"""
             **User's Input:**
             \"{self.user_input}\"
 
             **Game State:**
             {json.dumps(latest_gsi, indent=2)}
+            {timer_str}
             """.strip()
 
         user_content = [
