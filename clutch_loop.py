@@ -337,6 +337,7 @@ class STTWorker(QThread):
     ai_stream_token = pyqtSignal(str)   
     ai_stream_done = pyqtSignal()       
     tts_mode_ready = pyqtSignal(str)   
+    stt_ready = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -620,6 +621,11 @@ class STTWorker(QThread):
 
         self.recorder = AudioToTextRecorder(**recorder_config)
 
+        try:
+            self.stt_ready.emit()
+        except Exception:
+            pass
+
         while True:
             self.recorder.text(self.process_text)
 
@@ -631,7 +637,7 @@ class STTWorker(QThread):
 class ClutchWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("CLUTCH")
+        self.setVisible(False)
         self.setMinimumSize(960, 560)
         self.setStyleSheet("""
             QWidget { background: #0B0B0C; color: #EAEAEA; font-family: Inter, "Segoe UI", Roboto, "SF Pro Text", Arial; }
@@ -748,6 +754,7 @@ class ClutchWindow(QWidget):
         self.thread.ai_stream_started.connect(self.on_ai_stream_started)
         self.thread.ai_stream_token.connect(self.on_ai_stream_token)
         self.thread.ai_stream_done.connect(self.on_ai_stream_done)
+        self.thread.stt_ready.connect(self.on_stt_ready)
         try:
             self.badge_tts.setText(f"TTS: {'Piper' if self.thread.use_piper else 'Coqui XTTS'}")
         except Exception:
@@ -756,6 +763,10 @@ class ClutchWindow(QWidget):
         self.latest_user_text = ""
         self._user_scroll = u_scroll
         self._ai_scroll = a_scroll
+
+    def on_stt_ready(self):
+        self.setWindowTitle("CLUTCH")
+        self.show()
 
     def _scroll_to_bottom(self, scroll):
         bar = scroll.verticalScrollBar()
@@ -824,7 +835,6 @@ class ClutchWindow(QWidget):
 def start_ui():
     app = QApplication(sys.argv)
     window = ClutchWindow()
-    window.show()
     sys.exit(app.exec_())
 
 # Main function to start everything
