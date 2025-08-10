@@ -22,7 +22,7 @@ import pygetwindow as gw
 import traceback
 import requests
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QGraphicsDropShadowEffect
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from RealtimeSTT import AudioToTextRecorder
 from RealtimeTTS import TextToAudioStream, CoquiEngine, PiperEngine, PiperVoice
 from flask import Flask, request
@@ -128,11 +128,46 @@ def setup_gsi_cfg():
 
 
 
-# ----------------
-# GSI Server Setup
-# ----------------
+# ------------------------------
+# GSI Server & Local Timer Setup
+# ------------------------------
 gsi_app = Flask(__name__)
 latest_gsi_state = {}
+ROUND_FULL_S = 115
+BOMB_PLANT_S = 39   
+_timer_lock = threading.Lock()
+_last_round_phase = None
+_last_bomb_planted = None
+_timer_start_t = None      
+_timer_total_s = None 
+
+def _now():
+    return time.monotonic()
+
+def _fmt_mmss(seconds_left):
+    if seconds_left is None:
+        return "—"
+    s = max(0, int(seconds_left))
+    m = s // 60
+    s = s % 60
+    return f"{m:02d}:{s:02d}"
+
+def _remaining_from(start_t, total_s):
+    if start_t is None or total_s is None:
+        return None
+    return max(0.0, total_s - (_now() - start_t))
+
+def get_round_timer_text():
+    with _timer_lock:
+        start = _timer_start_t
+        total = _timer_total_s
+    rem = _remaining_from(start, total)
+    if rem is not None and rem <= 0:
+        with _timer_lock:
+            globals()['_timer_start_t'] = None
+            globals()['_timer_total_s'] = None
+        return "—"
+    return _fmt_mmss(rem)
 
 def safe_get(d, path, default=None):
     for key in path:
@@ -244,6 +279,30 @@ def gsi_listener():
             "winning_team": round_info.get('win_team')
         }
     }
+
+    # Use data for local timer
+    map_mode    = map_info.get('mode')
+    round_phase = round_info.get('phase')
+    bomb_state  = round_info.get('bomb')
+    bomb_planted = (bomb_state == "planted")
+    global _last_round_phase, _last_bomb_planted, _timer_start_t, _timer_total_s
+    with _timer_lock:
+        if map_mode == "competitive":
+            if _last_round_phase == "freezetime" and round_phase == "live":
+                _timer_start_t = _now()
+                _timer_total_s = ROUND_FULL_S
+            if (_last_bomb_planted is False or _last_bomb_planted is None) and bomb_planted is True:
+                if _timer_start_t is not None:
+                    _timer_start_t = _now()
+                    _timer_total_s = BOMB_PLANT_S
+            if round_phase == "over":
+                _timer_start_t = None
+                _timer_total_s = None
+        else:
+            _timer_start_t = None
+            _timer_total_s = None
+        _last_round_phase = round_phase
+        _last_bomb_planted = bomb_planted
 
     return "ok"
 
@@ -673,9 +732,21 @@ class ClutchWindow(QWidget):
         header.addStretch(1)
         badge_row = QHBoxLayout()
         badge_row.setContentsMargins(12, 0, 12, 8)
+        badge_col = QVBoxLayout()
+        badge_col.setSpacing(40) 
+        badge_col.setAlignment(Qt.AlignHCenter)
         self.badge_tts = QLabel("TTS engine: —")
         self.badge_tts.setObjectName("Badge")
-        badge_row.addWidget(self.badge_tts, 0, Qt.AlignHCenter)
+        self.badge_tts.setAlignment(Qt.AlignHCenter)
+        badge_col.addWidget(self.badge_tts)
+        self.badge_timer = QLabel("⏱ —")
+        self.badge_timer.setObjectName("Badge")
+        self.badge_timer.setAlignment(Qt.AlignHCenter)
+        badge_col.addWidget(self.badge_timer)
+        badge_row.addLayout(badge_col)
+        self._timer_updater = QTimer(self)
+        self._timer_updater.timeout.connect(self._refresh_round_timer_badge)
+        self._timer_updater.start(100)
         body = QHBoxLayout()
         body.setSpacing(16)
         def make_card():
@@ -760,6 +831,13 @@ class ClutchWindow(QWidget):
         self.latest_user_text = ""
         self._user_scroll = u_scroll
         self._ai_scroll = a_scroll
+
+    def _refresh_round_timer_badge(self):
+        try:
+            txt = get_round_timer_text()
+            self.badge_timer.setText(f"⏱ {txt}")
+        except Exception:
+            self.badge_timer.setText("⏱ —")
 
     def on_stt_ready(self):
         self.setWindowTitle("CLUTCH")
