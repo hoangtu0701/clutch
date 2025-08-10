@@ -676,7 +676,7 @@ class ClutchWindow(QWidget):
         header.addStretch(1)
         badge_row = QHBoxLayout()
         badge_row.setContentsMargins(12, 0, 12, 8)
-        self.badge_tts = QLabel("TTS: —")
+        self.badge_tts = QLabel("TTS engine: —")
         self.badge_tts.setObjectName("Badge")
         badge_row.addWidget(self.badge_tts, 0, Qt.AlignHCenter)
         body = QHBoxLayout()
@@ -756,7 +756,7 @@ class ClutchWindow(QWidget):
         self.thread.ai_stream_done.connect(self.on_ai_stream_done)
         self.thread.stt_ready.connect(self.on_stt_ready)
         try:
-            self.badge_tts.setText(f"TTS: {'Piper' if self.thread.use_piper else 'Coqui XTTS'}")
+            self.badge_tts.setText(f"TTS engine: {'Piper' if self.thread.use_piper else 'Coqui XTTS'}")
         except Exception:
             pass
         self.thread.start()
@@ -783,7 +783,7 @@ class ClutchWindow(QWidget):
         return text.strip()
 
     def on_tts_mode(self, mode_name: str):
-        self.badge_tts.setText(f"TTS: {mode_name}")
+        self.badge_tts.setText(f"TTS engine: {mode_name}")
 
     def on_stt_partial(self, text: str):
         self.latest_user_text = self._last_segment(text)
