@@ -20,7 +20,7 @@ import bettercam
 import pygetwindow as gw
 import traceback
 import requests
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QGraphicsDropShadowEffect
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from RealtimeSTT import AudioToTextRecorder
 from RealtimeTTS import TextToAudioStream, CoquiEngine, PiperEngine, PiperVoice
@@ -630,222 +630,168 @@ class STTWorker(QThread):
 class ClutchWindow(QWidget):
     def __init__(self):
         super().__init__()
-
-        # ---------- Window ----------
         self.setWindowTitle("CLUTCH")
-        self.setGeometry(120, 120, 960, 440)
-        self.setMinimumSize(780, 380)
+        self.setMinimumSize(960, 560)
         self.setStyleSheet("""
-            QWidget {
-                background: #0E0E10;            /* near-black */
-                color: #EDEDED;                 /* off-white text */
-                font-size: 14px;
-                font-family: Segoe UI, Inter, "SF Pro Text";
-            }
-            QFrame#Card {
-                background: #121214;            /* dark card */
-                border: 1px solid #232327;      /* subtle border */
-                border-radius: 14px;
-            }
-            QLabel#Headline {
-                font-size: 18px;
-                font-weight: 600;
-                letter-spacing: .2px;
-                color: #FFFFFF;
+            QWidget { background: #0B0B0C; color: #EAEAEA; font-family: Inter, "Segoe UI", Roboto, "SF Pro Text", Arial; }
+            QLabel#Title {
+                font-size: 26px; font-weight: 800; letter-spacing: 1.2px; color: #FFFFFF;
             }
             QLabel#Badge {
-                background: #121214;
-                border: 1px solid #4C8BF5;      /* modern blue accent */
-                color: #D9E4FF;
-                padding: 6px 10px;
-                border-radius: 10px;
-                font-weight: 600;
+                padding: 6px 12px; border-radius: 10px; border: 1px solid #2B2B2F;
+                color: #DADADA; background: #111113; font-weight: 600;
             }
-            QLabel#SectionTitle {
-                color: #A8ACB3;                 /* cool gray */
-                font-weight: 600;
-                font-size: 12px;
-                letter-spacing: .5px;
+            QLabel#Section {
+                font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #CFCFD4;
             }
-            QLabel#LiveText {
-                font-family: "Cascadia Code", Consolas, Menlo, monospace;
-                font-size: 13.5px;
-                line-height: 1.45em;
+            QLabel#Mono {
+                font-family: "Cascadia Code", Menlo, Consolas, monospace;
+                font-size: 14px; line-height: 1.5em; color: #E6E6E6;
             }
-            QScrollArea {
-                border: none;
-                background: transparent;
-            }
-            QScrollBar:vertical {
-                background: #0E0E10;
-                width: 10px;
-                margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background: #2A2F3A;
-                min-height: 24px;
-                border-radius: 5px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #3A4150;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
+            QFrame#Card { background: #121214; border: 1px solid #1F1F22; border-radius: 16px; }
+
+            /* removed inner black rectangles */
+            QScrollArea { border: none; background: transparent; }
+            QScrollArea > QWidget { background: transparent; }
+            QScrollBar:vertical { background: transparent; width: 10px; margin: 0; }
+            QScrollBar::handle:vertical { background: #2A2A2E; border-radius: 6px; min-height: 24px; }
+            QScrollBar::handle:vertical:hover { background: #343439; }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
         """)
-
-        # ---------- Header ----------
         header = QHBoxLayout()
-        header.setContentsMargins(4, 4, 4, 8)
-        header.setSpacing(10)
-
+        header.setContentsMargins(12, 14, 12, 10)
+        header.setSpacing(12)
         self.title = QLabel("CLUTCH")
-        self.title.setObjectName("Headline")
-
+        self.title.setObjectName("Title")
+        self.title.setAlignment(Qt.AlignHCenter)
+        header.addStretch(1)
+        header.addWidget(self.title, 0, Qt.AlignHCenter)
+        header.addStretch(1)
+        badge_row = QHBoxLayout()
+        badge_row.setContentsMargins(12, 0, 12, 8)
         self.badge_tts = QLabel("TTS: —")
         self.badge_tts.setObjectName("Badge")
-
-        header.addWidget(self.title, 0, Qt.AlignLeft)
-        header.addStretch(1)
-        header.addWidget(self.badge_tts, 0, Qt.AlignRight)
-
-        # ---------- Body: two cards side-by-side ----------
+        badge_row.addWidget(self.badge_tts, 0, Qt.AlignHCenter)
         body = QHBoxLayout()
-        body.setSpacing(14)
-
-        # --- Left card: User STT (current turn; persistent until next wakeword) ---
-        self.card_user = QFrame()
-        self.card_user.setObjectName("Card")
-        self.card_user.setMinimumWidth(420)
-        self.card_user.setMinimumHeight(320)
-
-        left_wrap = QVBoxLayout(self.card_user)
-        left_wrap.setContentsMargins(14, 12, 14, 12)
-        left_wrap.setSpacing(8)
-
-        stt_title = QLabel("USER — LIVE (CURRENT TURN)")
-        stt_title.setObjectName("SectionTitle")
-
-        # scrollable content
-        self.stt_scroll = QScrollArea()
-        self.stt_scroll.setWidgetResizable(True)
-        self.stt_container = QWidget()
-        self.stt_scroll.setWidget(self.stt_container)
-
-        stt_box_layout = QVBoxLayout(self.stt_container)
-        stt_box_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.stt_live_label = QLabel("Say \"Hey Jarvis\" to start…")
-        self.stt_live_label.setObjectName("LiveText")
-        self.stt_live_label.setWordWrap(True)
-        self.stt_live_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.stt_live_label.setMinimumHeight(240)
-
-        stt_box_layout.addWidget(self.stt_live_label)
-
-        left_wrap.addWidget(stt_title)
-        left_wrap.addWidget(self.stt_scroll)
-
-        # --- Right card: AI output stream (scrollable) ---
-        self.card_ai = QFrame()
-        self.card_ai.setObjectName("Card")
-        self.card_ai.setMinimumWidth(420)
-        self.card_ai.setMinimumHeight(320)
-
-        right_wrap = QVBoxLayout(self.card_ai)
-        right_wrap.setContentsMargins(14, 12, 14, 12)
-        right_wrap.setSpacing(8)
-
-        ai_title = QLabel("AI — LIVE STREAM")
-        ai_title.setObjectName("SectionTitle")
-
-        self.ai_scroll = QScrollArea()
-        self.ai_scroll.setWidgetResizable(True)
-        self.ai_container = QWidget()
-        self.ai_scroll.setWidget(self.ai_container)
-
-        ai_box_layout = QVBoxLayout(self.ai_container)
-        ai_box_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.ai_stream_label = QLabel("Waiting for a prompt…")
-        self.ai_stream_label.setObjectName("LiveText")
-        self.ai_stream_label.setWordWrap(True)
-        self.ai_stream_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.ai_stream_label.setMinimumHeight(240)
-
-        ai_box_layout.addWidget(self.ai_stream_label)
-
-        right_wrap.addWidget(ai_title)
-        right_wrap.addWidget(self.ai_scroll)
-
-        body.addWidget(self.card_user, 1)
-        body.addWidget(self.card_ai, 1)
-
-        # ---------- Root layout ----------
+        body.setSpacing(16)
+        def make_card():
+            card = QFrame()
+            card.setObjectName("Card")
+            shadow = QGraphicsDropShadowEffect(self)
+            shadow.setBlurRadius(28)
+            shadow.setOffset(0, 6)
+            shadow.setColor(Qt.black)
+            card.setGraphicsEffect(shadow)
+            lay = QVBoxLayout(card)
+            lay.setContentsMargins(16, 14, 16, 16)
+            lay.setSpacing(10)
+            return card, lay
+        self.user_card, u = make_card()
+        u_title = QLabel("USER'S INPUT")
+        u_title.setObjectName("Section")
+        u_title.setAlignment(Qt.AlignHCenter)
+        u_title.setStyleSheet("background-color: transparent;")
+        u_scroll = QScrollArea()
+        u_scroll.setWidgetResizable(True)
+        self.user_inner = QWidget()
+        self.user_inner.setStyleSheet("""
+            background-color: #000000;
+            border-radius: 12px;
+        """)
+        self.user_inner_lay = QVBoxLayout(self.user_inner)
+        self.user_inner_lay.setContentsMargins(14, 14, 14, 14)
+        self.user_inner_lay.setSpacing(0)
+        self.stt_label = QLabel('Say "Hey Jarvis" to start…')
+        self.stt_label.setObjectName("Mono")
+        self.stt_label.setWordWrap(True)
+        self.stt_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.user_inner_lay.addWidget(self.stt_label)
+        u_scroll.setWidget(self.user_inner)
+        u.addWidget(u_title)
+        u.addWidget(u_scroll)
+        self.ai_card, a = make_card()
+        a_title = QLabel("MODEL'S RESPONSE")
+        a_title.setObjectName("Section")
+        a_title.setAlignment(Qt.AlignHCenter)
+        a_title.setStyleSheet("background-color: transparent;")
+        a_scroll = QScrollArea()
+        a_scroll.setWidgetResizable(True)
+        self.ai_inner = QWidget()
+        self.ai_inner.setStyleSheet("""
+            background-color: #000000;
+            border-radius: 12px;
+        """)
+        self.ai_inner_lay = QVBoxLayout(self.ai_inner)
+        self.ai_inner_lay.setContentsMargins(14, 14, 14, 14)
+        self.ai_inner_lay.setSpacing(0)
+        self.ai_label = QLabel("Waiting for a prompt…")
+        self.ai_label.setObjectName("Mono")
+        self.ai_label.setWordWrap(True)
+        self.ai_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.ai_inner_lay.addWidget(self.ai_label)
+        a_scroll.setWidget(self.ai_inner)
+        a.addWidget(a_title)
+        a.addWidget(a_scroll)
+        body.addWidget(self.user_card, 1)
+        body.addWidget(self.ai_card, 1)
         root = QVBoxLayout(self)
-        root.setContentsMargins(16, 14, 16, 16)
-        root.setSpacing(10)
+        root.setContentsMargins(18, 14, 18, 18)
+        root.setSpacing(8)
         root.addLayout(header)
+        root.addLayout(badge_row)
         root.addLayout(body)
-
-        # ---------- Worker & signals ----------
         self.thread = STTWorker()
-
         self.thread.tts_mode_ready.connect(self.on_tts_mode)
         self.thread.stt_partial.connect(self.on_stt_partial)
         self.thread.stt_final.connect(self.on_stt_final)
-
-        # Only affect AI panel; do NOT clear user text after they finish speaking
         self.thread.ai_stream_started.connect(self.on_ai_stream_started)
         self.thread.ai_stream_token.connect(self.on_ai_stream_token)
         self.thread.ai_stream_done.connect(self.on_ai_stream_done)
-
-        # Make sure badge shows even if signal fired early
         try:
-            self.on_tts_mode("Piper" if getattr(self.thread, "use_piper", True) else "Coqui XTTS")
+            self.badge_tts.setText(f"TTS: {'Piper' if self.thread.use_piper else 'Coqui XTTS'}")
         except Exception:
             pass
-
         self.thread.start()
+        self.latest_user_text = ""
+        self._user_scroll = u_scroll
+        self._ai_scroll = a_scroll
 
-    # ---------- Helpers ----------
+    def _scroll_to_bottom(self, scroll):
+        bar = scroll.verticalScrollBar()
+        bar.setValue(bar.maximum())
+
     @staticmethod
-    def _last_segment_only(text: str) -> str:
-        """Show only the most recent segment of the running partial text."""
+    def _last_segment(text: str) -> str:
         import re
         parts = re.split(r'[.!?\n\u3002]+', text)
         for seg in reversed(parts):
             seg = seg.strip()
             if seg:
                 return seg
-        return ""
+        return text.strip()
 
-    # ---------- Slots ----------
     def on_tts_mode(self, mode_name: str):
         self.badge_tts.setText(f"TTS: {mode_name}")
 
     def on_stt_partial(self, text: str):
-        # Live updates while speaking — keep only current segment
-        self.stt_live_label.setText(self._last_segment_only(text))
-        # ensure scroll sticks to bottom while typing
-        self.stt_scroll.verticalScrollBar().setValue(self.stt_scroll.verticalScrollBar().maximum())
+        self.latest_user_text = self._last_segment(text)
+        self.stt_label.setText(self.latest_user_text)
+        self._scroll_to_bottom(self._user_scroll)
 
     def on_stt_final(self, text: str):
-        # When the user stops speaking, KEEP the final utterance visible (no auto-clear)
-        self.stt_live_label.setText(text.strip() or "—")
-        self.stt_scroll.verticalScrollBar().setValue(self.stt_scroll.verticalScrollBar().maximum())
+        self.latest_user_text = text.strip() or "—"
+        self.stt_label.setText(self.latest_user_text)
+        self._scroll_to_bottom(self._user_scroll)
 
     def on_ai_stream_started(self):
-        # New AI turn: clear only the AI panel
-        self.ai_stream_label.setText("")
-        self.ai_scroll.verticalScrollBar().setValue(self.ai_scroll.verticalScrollBar().maximum())
+        self.ai_label.setText("")
+        self._scroll_to_bottom(self._ai_scroll)
 
     def on_ai_stream_token(self, token: str):
-        self.ai_stream_label.setText(self.ai_stream_label.text() + token)
-        self.ai_scroll.verticalScrollBar().setValue(self.ai_scroll.verticalScrollBar().maximum())
+        self.ai_label.setText(self.ai_label.text() + token)
+        self._scroll_to_bottom(self._ai_scroll)
 
     def on_ai_stream_done(self):
-        # Nothing to clear here; leave both boxes as-is.
         pass
 
 
