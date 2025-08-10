@@ -186,22 +186,18 @@ def gsi_listener():
     player = state.get('player', {})
     map_info = state.get('map', {})
     round_info = state.get('round', {})
-    countdowns = state.get('phase_countdowns', {})
     weapons = player.get('weapons', {})
 
     # --- Basic player info ---
     name = player.get('name', 'Unknown')
     team = player.get('team', '?')
-    steamid = player.get('steamid')
 
     # --- Player state info ---
     st = player.get('state', {})
     hp = st.get('health')
     armor = st.get('armor')
     helmet = st.get('helmet')
-    flashed = st.get('flashed')
     smoked = st.get('smoked')
-    burning = st.get('burning')
     money = st.get('money')
     has_kit = st.get('defusekit')
     round_kills = st.get('round_kills')
@@ -232,13 +228,10 @@ def gsi_listener():
     latest_gsi_state = {
         "player_name": name,
         "player_team": team,
-        "steam_id": steamid,
         "health": hp,
         "armor": armor,
         "helmet": helmet,
-        "is_flashed": flashed,
         "is_smoked": smoked,
-        "is_burning": burning,
         "money": money,
         "has_defuse_kit": has_kit,
         "kills_this_round": round_kills,
@@ -263,6 +256,7 @@ def gsi_listener():
                 "ammo_in_reserve": w.get("ammo_reserve")
             }
             for w in weapons.values()
+            if w.get("type") not in ("C4", "Knife")
         ],
         "map_info": {
             "map_name": map_info.get('name'),
@@ -270,8 +264,6 @@ def gsi_listener():
             "map_phase": map_info.get('phase'),
             "ct_rounds_won": safe_get(map_info, ['team_ct', 'score']),
             "t_rounds_won": safe_get(map_info, ['team_t', 'score']),
-            "ct_consecutive_round_losses": safe_get(map_info, ['team_ct', 'consecutive_round_losses']),
-            "t_consecutive_round_losses": safe_get(map_info, ['team_t', 'consecutive_round_losses'])
         },
         "round_info": {
             "round_phase": round_info.get('phase'),
