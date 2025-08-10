@@ -382,7 +382,7 @@ class STTWorker(QThread):
             self.tts_stream.play_async()
             time.sleep(1.0)  
             self.tts_stream.stop()
-            print("Warmed up TTS engine...")
+            print("Warmed up TTS engine.")
         except Exception as e:
             print("TTS engine warm-up failed:", e)
 
