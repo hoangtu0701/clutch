@@ -46,6 +46,7 @@ openrouter_client = OpenAI(
 # OpenRouter model registries (3 models for different tasks)
 openrouter_model_ids = {
     "GPT 5": "openai/gpt-5-chat",
+    "Llama": "meta-llama/llama-3.2-3b-instruct",
     "DeepSeek R1 0528": "deepseek/deepseek-r1-0528:free",
     "LLaMA 3.1 405B Instruct": "meta-llama/llama-3.1-405b-instruct:free"
 }
