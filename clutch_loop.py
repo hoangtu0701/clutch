@@ -21,6 +21,7 @@ import bettercam
 import pygetwindow as gw
 import traceback
 import requests
+import re 
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QGraphicsDropShadowEffect
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from RealtimeSTT import AudioToTextRecorder
@@ -378,6 +379,53 @@ def capture_cs2_images():
 
 
 # -----------------------
+# Tokens Normalizer Setup
+# -----------------------
+_ONLY_PUNCT_OR_SPACE = re.compile(r"^[\s\.\,\!\?\:\;\…—–-]+$")
+
+def _pending_pause_for(token: str) -> str:
+    tok = token.strip()
+    for ch in reversed(tok):
+        if ch in ".!?":       
+            return ". "
+        if ch in ":;…—–-":    
+            return ", "
+    return ", "
+
+def tts_normalize_for_speech(s: str) -> str:
+    if not s:
+        return s
+
+    # Remove zero-width & bidi marks that can cause artifacts
+    s = re.sub(r"[\u200B-\u200F\u202A-\u202E\u2066-\u2069]", "", s)
+
+    # Strip markdown emphasis / stray asterisks
+    s = re.sub(r"\*\*(.*?)\*\*", r"\1", s)
+    s = re.sub(r"\*(.*?)\*", r"\1", s)
+    s = s.replace("*", "")
+
+    # Normalize smart quotes to ASCII 
+    s = s.replace("\u2018", "'").replace("\u2019", "'")   
+    s = s.replace("\u201C", '"').replace("\u201D", '"')  
+
+    # Keep . ! ? as strong pauses; convert others to short pauses 
+    s = re.sub(r"[—–]+", ",", s)          
+    s = re.sub(r"[;:]+", ",", s)          
+    s = re.sub(r"\.{3,}|[…]+", ",", s)    
+
+    # Fix stray space before punctuation & keep decimals intact
+    s = re.sub(r"\s+([.,!?;:])", r"\1", s)
+
+    # Tidy commas
+    s = re.sub(r"\s+,", ",", s)
+    s = re.sub(r",\s*", ", ", s)
+    s = re.sub(r"(,\s*){2,}", ", ", s)
+
+    return s.strip()
+
+
+
+# -----------------------
 # STT & TTS Workers Setup
 # -----------------------
 class STTWorker(QThread):
@@ -609,15 +657,16 @@ class STTWorker(QThread):
             buf = []
             buf_chars = 0
             last_flush = time.monotonic()
+            pending_pause = "" 
             FIRST_MAX_CHARS = 140
             FIRST_MAX_WAIT  = 1.0
-            NEXT_MAX_CHARS = 90
-            NEXT_MAX_WAIT  = 0.8
+            NEXT_MAX_CHARS  = 90
+            NEXT_MAX_WAIT   = 0.8
             PIPER_PUNCT = (".", "!", "?", "…", ":", ";", "\n")
             def thresholds():
                 return (FIRST_MAX_CHARS, FIRST_MAX_WAIT) if not started else (NEXT_MAX_CHARS, NEXT_MAX_WAIT)
             def flush_buffer():
-                nonlocal buf, buf_chars, started, last_flush
+                nonlocal buf, buf_chars, started, last_flush, pending_pause 
                 if not buf:
                     last_flush = time.monotonic()
                     return
@@ -627,12 +676,25 @@ class STTWorker(QThread):
                 if not text:
                     last_flush = time.monotonic()
                     return
-                self.tts_stream.feed(text)
+                tts_text = tts_normalize_for_speech(text)
+                if _ONLY_PUNCT_OR_SPACE.match(tts_text):
+                    pending_pause = _pending_pause_for(tts_text)
+                    last_flush = time.monotonic()
+                    return
+                if re.search(r'([.!?])\s*(["\']?)\s*$', tts_text):
+                    tts_text = re.sub(r'\s*$', '', tts_text) + "\n"
+                if pending_pause:
+                    self.tts_stream.feed(pending_pause)
+                    pending_pause = ""
+                    if not started:
+                        time.sleep(0.15)
+                        self.tts_stream.play_async()
+                        started = True
+                self.tts_stream.feed(tts_text)
                 if not started:
-                    time.sleep(0.15)  
+                    time.sleep(0.15)
                     self.tts_stream.play_async()
                     started = True
-
                 last_flush = time.monotonic()
             try:
                 for event in stream:
@@ -641,7 +703,6 @@ class STTWorker(QThread):
                         self.ai_stream_token.emit(token)
                         buf.append(token)
                         buf_chars += len(token)
-
                         max_chars, max_wait = thresholds()
                         if (
                             (token and token[-1] in PIPER_PUNCT) or
@@ -656,14 +717,30 @@ class STTWorker(QThread):
                 traceback.print_exc()
         else:
             started = False
+            pending_pause = "" 
             try:
-                feed = self.tts_stream.feed          
+                feed = self.tts_stream.feed
                 play = self.tts_stream.play_async
                 for event in stream:
                     if event.type == "response.output_text.delta":
-                        token = event.delta                        
+                        token = event.delta
                         self.ai_stream_token.emit(token)
-                        feed(token)
+                        if token.strip() == "":
+                            continue
+                        stripped = token.strip()
+                        if re.fullmatch(r"[\.\!\?\:\;\…—–-]+", stripped):
+                            pending_pause = _pending_pause_for(stripped)
+                            continue
+                        out = tts_normalize_for_speech(token)
+                        if re.search(r'([.!?])\s*(["\']?)\s*$', out):
+                            out = re.sub(r'\s*$', '', out) + "\n"
+                        if pending_pause:
+                            feed(pending_pause)
+                            pending_pause = ""
+                            if not started:
+                                play()
+                                started = True
+                        feed(out)
                         if not started:
                             play()
                             started = True
