@@ -15,6 +15,7 @@ import torch
 import filecmp
 import time
 import base64
+import signal
 import cv2
 import bettercam
 import pygetwindow as gw
@@ -793,6 +794,29 @@ class ClutchWindow(QWidget):
 
     def on_ai_stream_done(self):
         pass
+
+    def closeEvent(self, event):
+        try:
+            if hasattr(self, "thread") and self.thread.isRunning():
+                try:
+                    if getattr(self.thread, "recorder", None):
+                        if hasattr(self.thread.recorder, "stop"):
+                            self.thread.recorder.stop()
+                        if hasattr(self.thread.recorder, "shutdown"):
+                            self.thread.recorder.shutdown()
+                        if hasattr(self.thread.recorder, "close"):
+                            self.thread.recorder.close()
+                except Exception:
+                    pass
+                self.thread.terminate()
+            if hasattr(self.thread, "tts_stream"):
+                try:
+                    self.thread.tts_stream.stop()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        os.kill(os.getpid(), signal.SIGINT)
 
 
 
