@@ -446,11 +446,11 @@ class STTWorker(QThread):
 
         # Warm up TTS engine with a silent dummy token
         try:
-            self.tts_stream.feed("...")
+            self.tts_stream.feed(" ")
             self.tts_stream.play_async()
-            time.sleep(1.0)  
+            time.sleep(0.05)  
             self.tts_stream.stop()
-            print("Warmed up TTS engine.")
+            print("TTS engine warmed up.")
         except Exception as e:
             print("TTS engine warm-up failed:", e)
 
@@ -588,7 +588,21 @@ class STTWorker(QThread):
             { "role": "user", "content": user_content }
         ]
 
-        # 2. Call the brain
+        # 2. Clear any leftover audio before new response
+        try:
+            self.tts_stream.stop()
+        except Exception:
+            pass
+        try:
+            eng = getattr(self.tts_stream, "engine", None)
+            q = getattr(eng, "queue", None)
+            if q is not None and hasattr(q, "queue"):
+                with q.mutex:
+                    q.queue.clear()
+        except Exception:
+            pass
+
+        # 3. Call the brain
         print("Sending data to model...")
         stream = call_openai(message)
         if not stream:
@@ -596,16 +610,20 @@ class STTWorker(QThread):
             return
         self.current_stream = stream
         
-        # 3. Feed the response stream into the correct TTS
+        # 4. Feed the response stream into the correct TTS
         print(f"Receiving chunks from model...")
         if self.use_piper:
             started = False
             buf = []
             buf_chars = 0
             last_flush = time.monotonic()
-            PIPER_MAX_CHARS = 60
-            PIPER_MAX_WAIT  = 0.6
-            PIPER_PUNCT     = (".", "!", "?", "…", ":", ";", "\n")
+            FIRST_MAX_CHARS = 140
+            FIRST_MAX_WAIT  = 1.0
+            NEXT_MAX_CHARS = 90
+            NEXT_MAX_WAIT  = 0.8
+            PIPER_PUNCT = (".", "!", "?", "…", ":", ";", "\n")
+            def thresholds():
+                return (FIRST_MAX_CHARS, FIRST_MAX_WAIT) if not started else (NEXT_MAX_CHARS, NEXT_MAX_WAIT)
             def flush_buffer():
                 nonlocal buf, buf_chars, started, last_flush
                 if not buf:
@@ -619,8 +637,10 @@ class STTWorker(QThread):
                     return
                 self.tts_stream.feed(text)
                 if not started:
+                    time.sleep(0.15)  
                     self.tts_stream.play_async()
                     started = True
+
                 last_flush = time.monotonic()
             try:
                 for event in stream:
@@ -630,10 +650,11 @@ class STTWorker(QThread):
                         buf.append(token)
                         buf_chars += len(token)
 
+                        max_chars, max_wait = thresholds()
                         if (
                             (token and token[-1] in PIPER_PUNCT) or
-                            (buf_chars >= PIPER_MAX_CHARS) or
-                            ((time.monotonic() - last_flush) > PIPER_MAX_WAIT)
+                            (buf_chars >= max_chars) or
+                            ((time.monotonic() - last_flush) > max_wait)
                         ):
                             flush_buffer()
                 flush_buffer()
