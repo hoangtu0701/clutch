@@ -20,7 +20,7 @@ import bettercam
 import pygetwindow as gw
 import traceback
 import requests
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from RealtimeSTT import AudioToTextRecorder
 from RealtimeTTS import TextToAudioStream, CoquiEngine, PiperEngine, PiperVoice
@@ -330,7 +330,12 @@ def capture_cs2_images():
 # STT & TTS Workers Setup
 # -----------------------
 class STTWorker(QThread):
-    update = pyqtSignal(str)
+    stt_partial = pyqtSignal(str) 
+    stt_final = pyqtSignal(str) 
+    ai_stream_started = pyqtSignal()    
+    ai_stream_token = pyqtSignal(str)   
+    ai_stream_done = pyqtSignal()       
+    tts_mode_ready = pyqtSignal(str)   
 
     def __init__(self):
         super().__init__()
@@ -375,6 +380,9 @@ class STTWorker(QThread):
                 device="cuda"
             )
         self.tts_stream = TextToAudioStream(engine=engine)
+
+        # Tell the UI which engine is used
+        self.tts_mode_ready.emit("Piper" if self.use_piper else "Coqui XTTS")
 
         # Warm up TTS engine with a silent dummy token
         try:
@@ -432,7 +440,8 @@ class STTWorker(QThread):
         if text:
             styled += f"<b>{text}</b>"
 
-        self.update.emit(styled)
+        # Send real-time strings for the UI panel
+        self.stt_partial.emit(styled.replace("<b>", "").replace("</b>", ""))
 
     def process_text(self, text):
         self.recorder.post_speech_silence_duration = self.unknown_sentence_detection_pause
@@ -448,8 +457,10 @@ class STTWorker(QThread):
 
         # --- Create prompts for the brain ---
 
-        # 1. Store final user input
+        # 1. Store and show final user input
         self.user_input = text
+        self.stt_final.emit(self.user_input)
+        self.ai_stream_started.emit()
 
         # 2. Store latest GSI data
         latest_gsi = latest_gsi_state.copy() if latest_gsi_state else {}
@@ -548,6 +559,7 @@ class STTWorker(QThread):
                 for event in stream:
                     if event.type == "response.output_text.delta":
                         token = event.delta
+                        self.ai_stream_token.emit(token)
                         buf.append(token)
                         buf_chars += len(token)
 
@@ -558,6 +570,7 @@ class STTWorker(QThread):
                         ):
                             flush_buffer()
                 flush_buffer()
+                self.ai_stream_done.emit()
             except Exception:
                 print("Error during stream playback (Piper):")
                 traceback.print_exc()
@@ -568,11 +581,13 @@ class STTWorker(QThread):
                 play = self.tts_stream.play_async
                 for event in stream:
                     if event.type == "response.output_text.delta":
-                        token = event.delta
+                        token = event.delta                        
+                        self.ai_stream_token.emit(token)
                         feed(token)
                         if not started:
                             play()
                             started = True
+                self.ai_stream_done.emit()
             except Exception:
                 print("Error during stream playback (Coqui):")
                 traceback.print_exc()
@@ -615,26 +630,223 @@ class STTWorker(QThread):
 class ClutchWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("CLUTCH Voice Assistant")
-        self.setGeometry(200, 200, 600, 120)
 
-        self.label = QLabel("🎙️ Say 'Hey Jarvis' and start talking...", self)
-        self.label.setWordWrap(True)
-        self.label.setStyleSheet("font-size: 18px; padding: 10px; color: white;")
-        self.label.setAlignment(Qt.AlignCenter)
+        # ---------- Window ----------
+        self.setWindowTitle("CLUTCH")
+        self.setGeometry(120, 120, 960, 440)
+        self.setMinimumSize(780, 380)
+        self.setStyleSheet("""
+            QWidget {
+                background: #0E0E10;            /* near-black */
+                color: #EDEDED;                 /* off-white text */
+                font-size: 14px;
+                font-family: Segoe UI, Inter, "SF Pro Text";
+            }
+            QFrame#Card {
+                background: #121214;            /* dark card */
+                border: 1px solid #232327;      /* subtle border */
+                border-radius: 14px;
+            }
+            QLabel#Headline {
+                font-size: 18px;
+                font-weight: 600;
+                letter-spacing: .2px;
+                color: #FFFFFF;
+            }
+            QLabel#Badge {
+                background: #121214;
+                border: 1px solid #4C8BF5;      /* modern blue accent */
+                color: #D9E4FF;
+                padding: 6px 10px;
+                border-radius: 10px;
+                font-weight: 600;
+            }
+            QLabel#SectionTitle {
+                color: #A8ACB3;                 /* cool gray */
+                font-weight: 600;
+                font-size: 12px;
+                letter-spacing: .5px;
+            }
+            QLabel#LiveText {
+                font-family: "Cascadia Code", Consolas, Menlo, monospace;
+                font-size: 13.5px;
+                line-height: 1.45em;
+            }
+            QScrollArea {
+                border: none;
+                background: transparent;
+            }
+            QScrollBar:vertical {
+                background: #0E0E10;
+                width: 10px;
+                margin: 0;
+            }
+            QScrollBar::handle:vertical {
+                background: #2A2F3A;
+                min-height: 24px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: #3A4150;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+        """)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.label)
-        self.setLayout(layout)
+        # ---------- Header ----------
+        header = QHBoxLayout()
+        header.setContentsMargins(4, 4, 4, 8)
+        header.setSpacing(10)
 
-        self.setStyleSheet("background-color: #121212;")
+        self.title = QLabel("CLUTCH")
+        self.title.setObjectName("Headline")
 
+        self.badge_tts = QLabel("TTS: —")
+        self.badge_tts.setObjectName("Badge")
+
+        header.addWidget(self.title, 0, Qt.AlignLeft)
+        header.addStretch(1)
+        header.addWidget(self.badge_tts, 0, Qt.AlignRight)
+
+        # ---------- Body: two cards side-by-side ----------
+        body = QHBoxLayout()
+        body.setSpacing(14)
+
+        # --- Left card: User STT (current turn; persistent until next wakeword) ---
+        self.card_user = QFrame()
+        self.card_user.setObjectName("Card")
+        self.card_user.setMinimumWidth(420)
+        self.card_user.setMinimumHeight(320)
+
+        left_wrap = QVBoxLayout(self.card_user)
+        left_wrap.setContentsMargins(14, 12, 14, 12)
+        left_wrap.setSpacing(8)
+
+        stt_title = QLabel("USER — LIVE (CURRENT TURN)")
+        stt_title.setObjectName("SectionTitle")
+
+        # scrollable content
+        self.stt_scroll = QScrollArea()
+        self.stt_scroll.setWidgetResizable(True)
+        self.stt_container = QWidget()
+        self.stt_scroll.setWidget(self.stt_container)
+
+        stt_box_layout = QVBoxLayout(self.stt_container)
+        stt_box_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.stt_live_label = QLabel("Say \"Hey Jarvis\" to start…")
+        self.stt_live_label.setObjectName("LiveText")
+        self.stt_live_label.setWordWrap(True)
+        self.stt_live_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.stt_live_label.setMinimumHeight(240)
+
+        stt_box_layout.addWidget(self.stt_live_label)
+
+        left_wrap.addWidget(stt_title)
+        left_wrap.addWidget(self.stt_scroll)
+
+        # --- Right card: AI output stream (scrollable) ---
+        self.card_ai = QFrame()
+        self.card_ai.setObjectName("Card")
+        self.card_ai.setMinimumWidth(420)
+        self.card_ai.setMinimumHeight(320)
+
+        right_wrap = QVBoxLayout(self.card_ai)
+        right_wrap.setContentsMargins(14, 12, 14, 12)
+        right_wrap.setSpacing(8)
+
+        ai_title = QLabel("AI — LIVE STREAM")
+        ai_title.setObjectName("SectionTitle")
+
+        self.ai_scroll = QScrollArea()
+        self.ai_scroll.setWidgetResizable(True)
+        self.ai_container = QWidget()
+        self.ai_scroll.setWidget(self.ai_container)
+
+        ai_box_layout = QVBoxLayout(self.ai_container)
+        ai_box_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.ai_stream_label = QLabel("Waiting for a prompt…")
+        self.ai_stream_label.setObjectName("LiveText")
+        self.ai_stream_label.setWordWrap(True)
+        self.ai_stream_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.ai_stream_label.setMinimumHeight(240)
+
+        ai_box_layout.addWidget(self.ai_stream_label)
+
+        right_wrap.addWidget(ai_title)
+        right_wrap.addWidget(self.ai_scroll)
+
+        body.addWidget(self.card_user, 1)
+        body.addWidget(self.card_ai, 1)
+
+        # ---------- Root layout ----------
+        root = QVBoxLayout(self)
+        root.setContentsMargins(16, 14, 16, 16)
+        root.setSpacing(10)
+        root.addLayout(header)
+        root.addLayout(body)
+
+        # ---------- Worker & signals ----------
         self.thread = STTWorker()
-        self.thread.update.connect(self.update_text)
+
+        self.thread.tts_mode_ready.connect(self.on_tts_mode)
+        self.thread.stt_partial.connect(self.on_stt_partial)
+        self.thread.stt_final.connect(self.on_stt_final)
+
+        # Only affect AI panel; do NOT clear user text after they finish speaking
+        self.thread.ai_stream_started.connect(self.on_ai_stream_started)
+        self.thread.ai_stream_token.connect(self.on_ai_stream_token)
+        self.thread.ai_stream_done.connect(self.on_ai_stream_done)
+
+        # Make sure badge shows even if signal fired early
+        try:
+            self.on_tts_mode("Piper" if getattr(self.thread, "use_piper", True) else "Coqui XTTS")
+        except Exception:
+            pass
+
         self.thread.start()
 
-    def update_text(self, text):
-        self.label.setText(text)
+    # ---------- Helpers ----------
+    @staticmethod
+    def _last_segment_only(text: str) -> str:
+        """Show only the most recent segment of the running partial text."""
+        import re
+        parts = re.split(r'[.!?\n\u3002]+', text)
+        for seg in reversed(parts):
+            seg = seg.strip()
+            if seg:
+                return seg
+        return ""
+
+    # ---------- Slots ----------
+    def on_tts_mode(self, mode_name: str):
+        self.badge_tts.setText(f"TTS: {mode_name}")
+
+    def on_stt_partial(self, text: str):
+        # Live updates while speaking — keep only current segment
+        self.stt_live_label.setText(self._last_segment_only(text))
+        # ensure scroll sticks to bottom while typing
+        self.stt_scroll.verticalScrollBar().setValue(self.stt_scroll.verticalScrollBar().maximum())
+
+    def on_stt_final(self, text: str):
+        # When the user stops speaking, KEEP the final utterance visible (no auto-clear)
+        self.stt_live_label.setText(text.strip() or "—")
+        self.stt_scroll.verticalScrollBar().setValue(self.stt_scroll.verticalScrollBar().maximum())
+
+    def on_ai_stream_started(self):
+        # New AI turn: clear only the AI panel
+        self.ai_stream_label.setText("")
+        self.ai_scroll.verticalScrollBar().setValue(self.ai_scroll.verticalScrollBar().maximum())
+
+    def on_ai_stream_token(self, token: str):
+        self.ai_stream_label.setText(self.ai_stream_label.text() + token)
+        self.ai_scroll.verticalScrollBar().setValue(self.ai_scroll.verticalScrollBar().maximum())
+
+    def on_ai_stream_done(self):
+        # Nothing to clear here; leave both boxes as-is.
+        pass
 
 
 
