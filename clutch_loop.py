@@ -366,8 +366,8 @@ def capture_cs2_images():
         screen_w, screen_h = get_screen_size()
 
         # Capture regions based on fractions
-        overall    = grab_region(0.0, 0.0, 1.0, 1.0, screen_w, screen_h)
-        radar      = grab_region(0.0, 0.0, 0.2, 0.3, screen_w, screen_h)
+        overall    = grab_region(0.0, 0.075, 1.0, 0.85, screen_w, screen_h)
+        radar      = grab_region(0.0, 0.0, 0.2, 0.32, screen_w, screen_h)
         ct_alive   = grab_region(0.2, 0.0, 0.27, 0.12, screen_w, screen_h)
         t_alive    = grab_region(0.53, 0.0, 0.27, 0.12, screen_w, screen_h)
 
