@@ -453,6 +453,7 @@ class STTWorker(QThread):
         self.displayed_text = ""
         self.prev_text = ""
         self.recorder = None
+        self.tts_stream = None  
         self.current_stream = None
         
         # -------- TTS engine selection flags --------
@@ -564,11 +565,12 @@ class STTWorker(QThread):
 
     def on_wakeword_detected(self):
         # Stop TTS if playing
-        try:
-            if self.tts_stream.is_playing():
-                self.tts_stream.stop()
-        except Exception as e:
-            print("Error stopping TTS:", e)
+        if (not self.use_google) and (self.tts_stream is not None):
+            try:
+                if self.tts_stream.is_playing():
+                    self.tts_stream.stop()
+            except Exception as e:
+                print("Error stopping TTS:", e)
 
         # Close LLM stream if active
         try:
@@ -696,19 +698,20 @@ class STTWorker(QThread):
             { "role": "user", "content": user_content }
         ]
 
-        # 2. Clear any leftover audio before new response
-        try:
-            self.tts_stream.stop()
-        except Exception:
-            pass
-        try:
-            eng = getattr(self.tts_stream, "engine", None)
-            q = getattr(eng, "queue", None)
-            if q is not None and hasattr(q, "queue"):
-                with q.mutex:
-                    q.queue.clear()
-        except Exception:
-            pass
+        # 2. Clear any leftover audio for Piper/Coqui before new response
+        if (not self.use_google) and (self.tts_stream is not None):
+            try:
+                self.tts_stream.stop()
+            except Exception:
+                pass
+            try:
+                eng = getattr(self.tts_stream, "engine", None)
+                q = getattr(eng, "queue", None)
+                if q is not None and hasattr(q, "queue"):
+                    with q.mutex:
+                        q.queue.clear()
+            except Exception:
+                pass
 
         # 3. Call the brain
         print("Sending data to model...")
