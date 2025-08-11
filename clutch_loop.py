@@ -883,6 +883,38 @@ class STTWorker(QThread):
         
         # 4. Feed the response stream into the correct TTS
         print(f"Receiving chunks from model...")
+
+        # Google TTS
+        if self.use_google:
+            try:
+                for event in stream:
+                    if event.type == "response.output_text.delta":
+                        token = event.delta
+                        try:
+                            self.ai_stream_token.emit(token)
+                        except Exception:
+                            pass
+                        try:
+                            self.google_req_queue.put(token, timeout=0.05)
+                        except Exception:
+                            pass
+                try:
+                    self.ai_stream_done.emit()
+                except Exception:
+                    pass
+                try:
+                    self.google_req_queue.put(None, timeout=0.1)
+                except Exception:
+                    pass
+            except Exception:
+                try:
+                    self.google_req_queue.put(None, timeout=0.1)
+                except Exception:
+                    pass
+                self._stop_google_tts_stream("google-stream-error")
+            return
+
+        # Piper TTS
         if self.use_piper:
             started = False
             buf = []
@@ -946,6 +978,8 @@ class STTWorker(QThread):
             except Exception:
                 print("Error during stream playback (Piper):")
                 traceback.print_exc()
+
+        # Coqui TTS
         else:
             started = False
             pending_pause = "" 
