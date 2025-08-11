@@ -619,7 +619,7 @@ class STTWorker(QThread):
 
         # Fresh state
         self.google_stop_event = threading.Event()
-        self.google_req_queue = Queue()
+        self.google_req_queue = Queue(maxsize=512)
 
         # Fresh audio
         self.google_audio = pyaudio.PyAudio()
@@ -895,7 +895,7 @@ class STTWorker(QThread):
                         except Exception:
                             pass
                         try:
-                            self.google_req_queue.put(token, timeout=0.05)
+                            self.google_req_queue.put_nowait(token)
                         except Exception:
                             pass
                 try:
@@ -1222,7 +1222,6 @@ class ClutchWindow(QWidget):
 
     @staticmethod
     def _last_segment(text: str) -> str:
-        import re
         parts = re.split(r'[.!?\n\u3002]+', text)
         for seg in reversed(parts):
             seg = seg.strip()
