@@ -434,7 +434,6 @@ class STTWorker(QThread):
     ai_stream_started = pyqtSignal()    
     ai_stream_token = pyqtSignal(str)   
     ai_stream_done = pyqtSignal()       
-    tts_mode_ready = pyqtSignal(str)   
     stt_ready = pyqtSignal()
 
     def __init__(self):
@@ -480,9 +479,6 @@ class STTWorker(QThread):
                 device="cuda"
             )
         self.tts_stream = TextToAudioStream(engine=engine)
-
-        # Tell the UI which engine is used
-        self.tts_mode_ready.emit("Piper" if self.use_piper else "Coqui XTTS")
 
         # Warm up TTS engine with a silent dummy token
         try:
@@ -912,7 +908,6 @@ class ClutchWindow(QWidget):
         root.addLayout(badge_row)
         root.addLayout(body)
         self.thread = STTWorker()
-        self.thread.tts_mode_ready.connect(self.on_tts_mode)
         self.thread.stt_partial.connect(self.on_stt_partial)
         self.thread.stt_final.connect(self.on_stt_final)
         self.thread.ai_stream_started.connect(self.on_ai_stream_started)
