@@ -457,6 +457,12 @@ class STTWorker(QThread):
         self.recorder = None
         self.tts_stream = None  
         self.current_stream = None
+
+        # -------- Wakeword/phase state (prevents late sneaky wakewords) --------
+        self._state_lock   = threading.Lock()
+        self._is_speaking  = False   
+        self._is_listening = False   
+        self._wake_locked  = False   
         
         # -------- TTS engine selection flags --------
         self.use_google = False
@@ -599,11 +605,20 @@ class STTWorker(QThread):
             call = self.google_client.streaming_synthesize(gen)
             self.google_active_call = call
 
+            marked_playing = False
+
             # Pull audio as it arrives and push to output
             for resp in call:
                 if self.google_stop_event.is_set():
                     break
                 if resp.audio_content and self.google_audio_out is not None:
+
+                    # Mark speaking at first real audio. Also unlock wakeword now
+                    if not marked_playing:
+                        with self._state_lock:
+                            self._is_speaking = True
+                            self._wake_locked = False
+                        marked_playing = True
                     try:
                         self.google_audio_out.write(resp.audio_content)
                     except Exception:
@@ -612,6 +627,10 @@ class STTWorker(QThread):
             pass
         finally:
             self.google_active_call = None
+
+            # No longer speaking (either finished or interrupted)
+            with self._state_lock:
+                self._is_speaking = False
 
     def _start_google_streaming_session(self):
 
@@ -704,11 +723,62 @@ class STTWorker(QThread):
             pass
         finally:
             self.google_stream_thread = None
+            with self._state_lock:
+                self._is_speaking = False
 
     def on_wakeword_detected(self):
+
+        # Snapshot state atomically
+        with self._state_lock:
+            speaking  = self._is_speaking
+            listening = self._is_listening
+            locked    = self._wake_locked
+
+        # If user is currently speaking, always honor wakeword to interrupt
+        if speaking:
+            if self.use_google:
+                self._stop_google_tts_stream("wake-interrupt")
+            else:
+                if self.tts_stream is not None:
+                    try:
+                        self.tts_stream.stop()
+                    except Exception:
+                        pass
+                    try:
+                        eng = getattr(self.tts_stream, "engine", None)
+                        q = getattr(eng, "queue", None)
+                        if q is not None and hasattr(q, "queue"):
+                            with q.mutex:
+                                q.queue.clear()
+                    except Exception:
+                        pass
+
+            # Enter listening mode after interrupt
+            with self._state_lock:
+                self._is_speaking  = False
+                self._is_listening = True
+                self._wake_locked  = False
+
+            # Also close any LLM stream if active
+            try:
+                if self.current_stream:
+                    self.current_stream.close()
+                    self.current_stream = None
+            except Exception as e:
+                print("Error closing current stream:", e)
+            return
+
+        # If user just finished speaking (STT final already happened) and is "thinking", block any late/ghost wakewords until TTS actually starts.
+        if locked:
+            return
+
+        # If already in listening, duplicates are no-ops (idempotent)
+        if listening:
+            return
+        
         if self.use_google:
             # Stop Google TTS streaming path
-            self._stop_google_tts_stream("wakeword")
+            self._stop_google_tts_stream("pre-listen")
         else:
             # Stop Piper/Coqui TTS streaming path
             if (self.tts_stream is not None):
@@ -732,6 +802,10 @@ class STTWorker(QThread):
                 self.current_stream = None
         except Exception as e:
             print("Error closing current stream:", e)
+
+        # Mark we’re in listening mode now
+        with self._state_lock:
+            self._is_listening = True
 
     def preprocess_text(self, text):
         text = text.lstrip()
@@ -767,6 +841,12 @@ class STTWorker(QThread):
         self.stt_partial.emit(styled.replace("<b>", "").replace("</b>", ""))
 
     def process_text(self, text):
+
+        # Got the final user utterance - Stop accepting wakewords until TTS actually starts
+        with self._state_lock:
+            self._is_listening = False
+            self._wake_locked  = True
+
         self.recorder.post_speech_silence_duration = self.unknown_sentence_detection_pause
         text = self.preprocess_text(text).rstrip()
         if text.endswith("..."):
@@ -953,11 +1033,17 @@ class STTWorker(QThread):
                     if not started:
                         time.sleep(0.15)
                         self.tts_stream.play_async()
+                        with self._state_lock:
+                            self._is_speaking = True
+                            self._wake_locked = False
                         started = True
                 self.tts_stream.feed(tts_text)
                 if not started:
                     time.sleep(0.15)
                     self.tts_stream.play_async()
+                    with self._state_lock:
+                        self._is_speaking = True
+                        self._wake_locked = False
                     started = True
                 last_flush = time.monotonic()
             try:
@@ -976,6 +1062,8 @@ class STTWorker(QThread):
                             flush_buffer()
                 flush_buffer()
                 self.ai_stream_done.emit()
+                with self._state_lock:
+                    self._is_speaking = False
             except Exception:
                 print("Error during stream playback (Piper):")
                 traceback.print_exc()
@@ -1005,12 +1093,20 @@ class STTWorker(QThread):
                             pending_pause = ""
                             if not started:
                                 play()
+                                with self._state_lock:
+                                    self._is_speaking = True
+                                    self._wake_locked = False
                                 started = True
                         feed(out)
                         if not started:
                             play()
+                            with self._state_lock:
+                                self._is_speaking = True
+                                self._wake_locked = False
                             started = True
                 self.ai_stream_done.emit()
+                with self._state_lock:
+                    self._is_speaking = False
             except Exception:
                 print("Error during stream playback (Coqui):")
                 traceback.print_exc()
