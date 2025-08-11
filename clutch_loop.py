@@ -446,7 +446,7 @@ class STTWorker(QThread):
         self.prev_text = ""
         self.recorder = None
         self.current_stream = None
-        self.use_piper = True
+        self.use_piper = False
 
         # Initialize the TTS engine depending on remaining VRAM
         if torch.cuda.is_available():
