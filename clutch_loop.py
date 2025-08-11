@@ -628,8 +628,10 @@ class STTWorker(QThread):
         finally:
             self.google_active_call = None
 
-            # No longer speaking (either finished or interrupted)
+            # If we never started playing, drop the thinking lock so next wake works
             with self._state_lock:
+                if not 'marked_playing' in locals() or not marked_playing:
+                    self._wake_locked = False
                 self._is_speaking = False
 
     def _start_google_streaming_session(self):
@@ -852,6 +854,9 @@ class STTWorker(QThread):
         if text.endswith("..."):
             text = text[:-2]
         if not text:
+            with self._state_lock:
+                self._wake_locked  = False
+                self._is_listening = False
             return
 
         self.full_sentences.append(text)
@@ -959,6 +964,8 @@ class STTWorker(QThread):
         stream = call_openai(message)
         if not stream:
             print("No response from the model.")
+            with self._state_lock:
+                self._wake_locked = False
             return
         self.current_stream = stream
         
@@ -1064,9 +1071,15 @@ class STTWorker(QThread):
                 self.ai_stream_done.emit()
                 with self._state_lock:
                     self._is_speaking = False
+                if not started:
+                    with self._state_lock:
+                        self._wake_locked = False
             except Exception:
                 print("Error during stream playback (Piper):")
                 traceback.print_exc()
+                with self._state_lock:
+                    self._wake_locked = False
+                    self._is_speaking = False
 
         # Coqui TTS
         else:
@@ -1107,9 +1120,15 @@ class STTWorker(QThread):
                 self.ai_stream_done.emit()
                 with self._state_lock:
                     self._is_speaking = False
+                if not started:
+                    with self._state_lock:
+                        self._wake_locked = False
             except Exception:
                 print("Error during stream playback (Coqui):")
                 traceback.print_exc()
+                with self._state_lock:
+                    self._wake_locked = False
+                    self._is_speaking = False
 
     def run(self):
         recorder_config = {
