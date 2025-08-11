@@ -571,7 +571,72 @@ class STTWorker(QThread):
                 print("TTS engine warmed up.")
             except Exception as e:
                 print("TTS engine warm-up failed:", e)
+    
+    def _build_google_request_generator(self):
 
+        # Yield config first
+        yield texttospeech.StreamingSynthesizeRequest(
+            streaming_config=self.google_streaming_config
+        )
+
+        # Then keep yielding chunks until stop or sentinel
+        while self.google_stop_event is not None and not self.google_stop_event.is_set():
+            try:
+                item = self.google_req_queue.get(timeout=0.1)  
+            except Empty:
+                continue
+            if item is None:
+                break
+            # Pass text chunk AS-IS (no normalization) for minimal latency
+            yield texttospeech.StreamingSynthesizeRequest(
+                input=texttospeech.StreamingSynthesisInput(text=item)
+            )
+
+    def _google_playback_worker(self):
+        try:
+            gen = self._build_google_request_generator()
+            call = self.google_client.streaming_synthesize(gen)
+            self.google_active_call = call
+
+            # Pull audio as it arrives and push to output
+            for resp in call:
+                if self.google_stop_event.is_set():
+                    break
+                if resp.audio_content and self.google_audio_out is not None:
+                    try:
+                        self.google_audio_out.write(resp.audio_content)
+                    except Exception:
+                        break
+        except Exception:
+            pass
+        finally:
+            self.google_active_call = None
+
+    def _start_google_streaming_session(self):
+
+        # Stop old session if any
+        self._stop_google_tts_stream("pre-answer-clean-start")
+
+        # Fresh state
+        self.google_stop_event = threading.Event()
+        self.google_req_queue = Queue()
+
+        # Fresh audio
+        self.google_audio = pyaudio.PyAudio()
+        self.google_audio_out = self.google_audio.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=self.google_sample_rate,
+            output=True,
+            frames_per_buffer=2048,
+        )
+
+        # Start streaming thread (it will wait for chunks from the queue)
+        self.google_stream_thread = threading.Thread(
+            target=self._google_playback_worker, daemon=True
+        )
+        self.google_stream_thread.start()
+    
     def _stop_google_tts_stream(self, reason: str = "manual"):
 
         # Signal the request generator to stop
@@ -785,10 +850,18 @@ class STTWorker(QThread):
             { "role": "user", "content": user_content }
         ]
 
-        # 2. Clear any leftover audio for Piper/Coqui before new response
-        if (not self.use_google) and (self.tts_stream is not None):
+        # 2. Clear any leftover audio before new response / start fresh TTS session
+        if self.use_google:
+            # Google path - stop any old stream and spin up a fresh session ready to accept tokens
             try:
-                self.tts_stream.stop()
+                self._start_google_streaming_session()
+            except Exception:
+                # If anything goes wrong, try to fall back instantly. Next steps will handle
+                self._stop_google_tts_stream("failed-to-start-fresh-session")
+        else:
+            try:
+                if self.tts_stream is not None:
+                    self.tts_stream.stop()
             except Exception:
                 pass
             try:
