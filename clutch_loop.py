@@ -23,6 +23,7 @@ import traceback
 import requests
 import re 
 import pyaudio
+from queue import Queue, Empty
 from google.cloud import texttospeech
 from google.oauth2 import service_account
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QGraphicsDropShadowEffect
@@ -465,6 +466,14 @@ class STTWorker(QThread):
         self.google_streaming_config = None
         self.google_sample_rate = GOOGLE_TTS_SAMPLE_RATE
 
+        # -------- Google streaming state if used --------
+        self.google_req_queue = None       
+        self.google_stop_event = threading.Event()
+        self.google_audio = None          
+        self.google_audio_out = None        
+        self.google_stream_thread = None    
+        self.google_active_call = None      
+
         # -------- 1. Try Google TTS as primary engine --------
         try:
             if os.path.isfile(GOOGLE_TTS_KEY_PATH):
@@ -563,14 +572,92 @@ class STTWorker(QThread):
             except Exception as e:
                 print("TTS engine warm-up failed:", e)
 
+    def _stop_google_tts_stream(self, reason: str = "manual"):
+
+        # Signal the request generator to stop
+        try:
+            if self.google_stop_event is not None:
+                self.google_stop_event.set()
+        except Exception:
+            pass
+
+        # Unblock the generator quickly by pushing a sentinel
+        try:
+            if self.google_req_queue is not None:
+                try:
+                    self.google_req_queue.put_nowait(None)  
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Best-effort cancel on the active streaming call if available
+        try:
+            call = getattr(self, "google_active_call", None)
+            if call is not None and hasattr(call, "cancel"):
+                try:
+                    call.cancel()
+                except Exception:
+                    pass
+            self.google_active_call = None
+        except Exception:
+            pass
+
+        # Close PyAudio stream fast (stop current playback immediately)
+        try:
+            if self.google_audio_out is not None:
+                try:
+                    if self.google_audio_out.is_active():
+                        self.google_audio_out.stop_stream()
+                except Exception:
+                    pass
+                try:
+                    self.google_audio_out.close()
+                except Exception:
+                    pass
+                self.google_audio_out = None
+        except Exception:
+            pass
+
+        # Optionally terminate the PyAudio host (will recreate next time)
+        try:
+            if self.google_audio is not None:
+                try:
+                    self.google_audio.terminate()
+                except Exception:
+                    pass
+                self.google_audio = None
+        except Exception:
+            pass
+
+        # Join the playback thread (don’t hang if it’s already gone)
+        try:
+            if self.google_stream_thread is not None and self.google_stream_thread.is_alive():
+                self.google_stream_thread.join(timeout=0.5)
+        except Exception:
+            pass
+        finally:
+            self.google_stream_thread = None
+
     def on_wakeword_detected(self):
-        # Stop TTS if playing
-        if (not self.use_google) and (self.tts_stream is not None):
-            try:
-                if self.tts_stream.is_playing():
+        if self.use_google:
+            # Stop Google TTS streaming path
+            self._stop_google_tts_stream("wakeword")
+        else:
+            # Stop Piper/Coqui TTS streaming path
+            if (self.tts_stream is not None):
+                try:
                     self.tts_stream.stop()
-            except Exception as e:
-                print("Error stopping TTS:", e)
+                except Exception:
+                    pass
+                try:
+                    eng = getattr(self.tts_stream, "engine", None)
+                    q = getattr(eng, "queue", None)
+                    if q is not None and hasattr(q, "queue"):
+                        with q.mutex:
+                            q.queue.clear()
+                except Exception:
+                    pass
 
         # Close LLM stream if active
         try:
