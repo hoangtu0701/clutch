@@ -1256,21 +1256,60 @@ class ClutchWindow(QWidget):
 
     def closeEvent(self, event):
         try:
-            if hasattr(self, "thread") and self.thread.isRunning():
+            if hasattr(self, "thread"):
                 try:
-                    if getattr(self.thread, "recorder", None):
-                        if hasattr(self.thread.recorder, "stop"):
-                            self.thread.recorder.stop()
-                        if hasattr(self.thread.recorder, "shutdown"):
-                            self.thread.recorder.shutdown()
-                        if hasattr(self.thread.recorder, "close"):
-                            self.thread.recorder.close()
+                    if getattr(self.thread, "use_google", False):
+                        self.thread._stop_google_tts_stream("window-close")
+                    else:
+                        ts = getattr(self.thread, "tts_stream", None)
+                        if ts is not None:
+                            try:
+                                ts.stop()
+                            except Exception:
+                                pass
+                            try:
+                                eng = getattr(ts, "engine", None)
+                                q = getattr(eng, "queue", None)
+                                if q is not None and hasattr(q, "queue"):
+                                    with q.mutex:
+                                        q.queue.clear()
+                            except Exception:
+                                pass
                 except Exception:
                     pass
-                self.thread.terminate()
-            if hasattr(self.thread, "tts_stream"):
                 try:
-                    self.thread.tts_stream.stop()
+                    cur = getattr(self.thread, "current_stream", None)
+                    if cur is not None:
+                        try:
+                            cur.close()
+                        except Exception:
+                            pass
+                        self.thread.current_stream = None
+                except Exception:
+                    pass
+                try:
+                    rec = getattr(self.thread, "recorder", None)
+                    if rec:
+                        if hasattr(rec, "stop"):
+                            rec.stop()
+                        if hasattr(rec, "shutdown"):
+                            rec.shutdown()
+                        if hasattr(rec, "close"):
+                            rec.close()
+                except Exception:
+                    pass
+                try:
+                    self.thread.requestInterruption()
+                except Exception:
+                    pass
+                try:
+                    self.thread.quit()
+                    self.thread.wait(500)
+                except Exception:
+                    pass
+                try:
+                    if self.thread.isRunning():
+                        self.thread.terminate()
                 except Exception:
                     pass
         except Exception:
