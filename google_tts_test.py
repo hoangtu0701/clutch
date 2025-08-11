@@ -18,7 +18,7 @@ SAMPLE_RATE = 24000
 
 streaming_config = texttospeech.StreamingSynthesizeConfig(
     voice=texttospeech.VoiceSelectionParams(
-        name="en-US-Chirp3-HD-Charon",
+        name="en-US-Chirp3-HD-Algieba",
         language_code="en-US",
     )
 )
