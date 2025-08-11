@@ -24,3 +24,6 @@ CLUTCH_APP/
 
 # Ignore env file
 .env
+
+# Ignore Google Clout TTS key
+google_tts_key.json
