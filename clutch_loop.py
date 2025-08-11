@@ -983,7 +983,7 @@ class STTWorker(QThread):
                         except Exception:
                             pass
                         try:
-                            self.google_req_queue.put_nowait(token)
+                            self.google_req_queue.put_nowait(token.replace('.', ';'))
                         except Exception:
                             pass
                 try:
