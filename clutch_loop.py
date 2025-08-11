@@ -22,6 +22,9 @@ import pygetwindow as gw
 import traceback
 import requests
 import re 
+import pyaudio
+from google.cloud import texttospeech
+from google.oauth2 import service_account
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QGraphicsDropShadowEffect
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from RealtimeSTT import AudioToTextRecorder
@@ -45,13 +48,18 @@ openrouter_client = OpenAI(
     base_url="https://openrouter.ai/api/v1"
 )
 
-# OpenRouter model registries (3 models for different tasks)
 openrouter_model_ids = {
     "GPT 5": "openai/gpt-5-chat",
     "Llama": "meta-llama/llama-3.2-3b-instruct",
     "DeepSeek R1 0528": "deepseek/deepseek-r1-0528:free",
     "LLaMA 3.1 405B Instruct": "meta-llama/llama-3.1-405b-instruct:free"
 }
+
+GOOGLE_TTS_KEY_PATH = os.path.join(base_dir, "google_tts_key.json")
+GOOGLE_TTS_SAMPLE_RATE = 24000 
+GOOGLE_TTS_VOICE = "en-US-Chirp3-HD-Algieba"
+
+
 
 # Function to check if an OpenRouter model is free
 def is_openrouter_model_free(model_id):
@@ -446,49 +454,113 @@ class STTWorker(QThread):
         self.prev_text = ""
         self.recorder = None
         self.current_stream = None
+        
+        # -------- TTS engine selection flags --------
+        self.use_google = False
         self.use_piper = False
 
-        # Initialize the TTS engine depending on remaining VRAM
-        if torch.cuda.is_available():
-            try:
-                free_mem, total_mem = torch.cuda.mem_get_info(0)
-                total_gb = total_mem / (1024 ** 3)
-                print(f"[VRAM] Total: {total_gb:.2f} GB")
-                self.use_piper = total_gb < 12.0
-            except Exception as e:
-                print("VRAM check failed, defaulting to Piper:", e)
-        if self.use_piper:
-            print("🔊 Using Piper TTS (low-VRAM mode)")
-            piper_bin   = os.path.join(base_dir, "models", "Piper", "piper", "piper.exe")
-            model_file  = os.path.join(base_dir, "models", "Piper", "en_US-norman-medium.onnx")
-            config_file = os.path.join(base_dir, "models", "Piper", "en_US-norman-medium.onnx.json")
-            voice  = PiperVoice(model_file=model_file, config_file=config_file)
-            engine = PiperEngine(piper_path=piper_bin, voice=voice, debug=False)
-        else:
-            print("🔊 Using Coqui XTTS (high-VRAM mode)")
-            model_path = os.path.join(base_dir, "models", "Coqui")
-            engine = CoquiEngine(
-                specific_model=model_path,
-                voice="Damien Black",
-                speed=1.1,
-                thread_count=5,
-                temperature=0.95,
-                repetition_penalty=5.0,
-                top_k=30,
-                top_p=0.92,
-                device="cuda"
-            )
-        self.tts_stream = TextToAudioStream(engine=engine)
+        # -------- Google TTS handles if used --------
+        self.google_client = None
+        self.google_streaming_config = None
+        self.google_sample_rate = GOOGLE_TTS_SAMPLE_RATE
 
-        # Warm up TTS engine with a silent dummy token
+        # -------- 1. Try Google TTS as primary engine --------
         try:
-            self.tts_stream.feed(" ")
-            self.tts_stream.play_async()
-            time.sleep(0.05)  
-            self.tts_stream.stop()
-            print("TTS engine warmed up.")
+            if os.path.isfile(GOOGLE_TTS_KEY_PATH):
+                creds = service_account.Credentials.from_service_account_file(GOOGLE_TTS_KEY_PATH)
+                self.google_client = texttospeech.TextToSpeechClient(credentials=creds)
+
+                # Voice & config for Chirp 3 HD streaming
+                self.google_streaming_config = texttospeech.StreamingSynthesizeConfig(
+                    voice=texttospeech.VoiceSelectionParams(
+                        name=GOOGLE_TTS_VOICE,
+                        language_code="en-US",
+                    )
+                )
+
+                # Warm up Google TTS
+                def _warmup_gen():
+                    yield texttospeech.StreamingSynthesizeRequest(
+                        streaming_config=self.google_streaming_config
+                    )
+                    yield texttospeech.StreamingSynthesizeRequest(
+                        input=texttospeech.StreamingSynthesisInput(text=" ")
+                    )
+
+                # Open a short-lived PyAudio sink for warmup
+                p = pyaudio.PyAudio()
+                out = p.open(
+                    format=pyaudio.paInt16,
+                    channels=1,
+                    rate=self.google_sample_rate,
+                    output=True,
+                    frames_per_buffer=2048,
+                )
+
+                # Read only a couple responses, just to warm pipeline
+                for i, resp in enumerate(self.google_client.streaming_synthesize(_warmup_gen()), 1):
+                    if resp.audio_content:
+                        out.write(resp.audio_content)
+                    if i >= 2:
+                        break
+                out.stop_stream(); out.close(); p.terminate()
+
+                self.use_google = True
+                print("🔊 Using Google Chirp 3 HD TTS")
+                print("TTS engine warmed up.")
+            else:
+                print(f"Google key not found at {GOOGLE_TTS_KEY_PATH}.")
         except Exception as e:
-            print("TTS engine warm-up failed:", e)
+            print(f"Google TTS failed. Fallback to local TTS: {e}")
+
+        # -------- 2. If Google TTS unavailable, choose local Piper/Coqui engine --------
+        if not self.use_google:
+
+            # Initialize the local TTS engine Piper/Coqui depending on remaining VRAM
+            if torch.cuda.is_available():
+                try:
+                    free_mem, total_mem = torch.cuda.mem_get_info(0)
+                    total_gb = total_mem / (1024 ** 3)
+                    print(f"[VRAM] Total: {total_gb:.2f} GB")
+                    self.use_piper = total_gb < 12.0
+                except Exception as e:
+                    print("VRAM check failed, defaulting to Piper:", e)
+                    self.use_piper = True
+
+            if self.use_piper:
+                print("🔊 Using Piper TTS (low-VRAM mode)")
+                piper_bin   = os.path.join(base_dir, "models", "Piper", "piper", "piper.exe")
+                model_file  = os.path.join(base_dir, "models", "Piper", "en_US-norman-medium.onnx")
+                config_file = os.path.join(base_dir, "models", "Piper", "en_US-norman-medium.onnx.json")
+                voice  = PiperVoice(model_file=model_file, config_file=config_file)
+                engine = PiperEngine(piper_path=piper_bin, voice=voice, debug=False)
+
+            else:
+                print("🔊 Using Coqui XTTS (high-VRAM mode)")
+                model_path = os.path.join(base_dir, "models", "Coqui")
+                engine = CoquiEngine(
+                    specific_model=model_path,
+                    voice="Damien Black",
+                    speed=1.1,
+                    thread_count=5,
+                    temperature=0.95,
+                    repetition_penalty=5.0,
+                    top_k=30,
+                    top_p=0.92,
+                    device="cuda"
+                )
+
+            self.tts_stream = TextToAudioStream(engine=engine)
+
+            # Warm up local TTS engine Piper/Coqui with a silent dummy token
+            try:
+                self.tts_stream.feed(" ")
+                self.tts_stream.play_async()
+                time.sleep(0.05)  
+                self.tts_stream.stop()
+                print("TTS engine warmed up.")
+            except Exception as e:
+                print("TTS engine warm-up failed:", e)
 
     def on_wakeword_detected(self):
         # Stop TTS if playing
@@ -914,14 +986,27 @@ class ClutchWindow(QWidget):
         self.thread.ai_stream_token.connect(self.on_ai_stream_token)
         self.thread.ai_stream_done.connect(self.on_ai_stream_done)
         self.thread.stt_ready.connect(self.on_stt_ready)
-        try:
-            self.badge_tts.setText(f"TTS engine: {'Piper' if self.thread.use_piper else 'Coqui XTTS'}")
-        except Exception:
-            pass
+        self._update_tts_badge()
+        if hasattr(self.thread, "stt_ready"):
+            self.thread.stt_ready.connect(self._update_tts_badge)
+        if hasattr(self.thread, "tts_mode_ready"):
+            self.thread.tts_mode_ready.connect(self._update_tts_badge)
         self.thread.start()
         self.latest_user_text = ""
         self._user_scroll = u_scroll
         self._ai_scroll = a_scroll
+
+    def _update_tts_badge(self):
+        try:
+            if getattr(self.thread, "use_google", False):
+                name = "Google Chirp 3 HD"
+            elif getattr(self.thread, "use_piper", False):
+                name = "Piper"
+            else:
+                name = "Coqui XTTS v2"
+            self.badge_tts.setText(f"TTS engine: {name}")
+        except Exception:
+            pass
 
     def _refresh_round_timer_badge(self):
         try:
