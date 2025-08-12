@@ -19,8 +19,9 @@ __pycache__/
 *.swo
 *.bak
 
-# Ignore any build artifacts
+# Ignore builder and any build artifacts
 CLUTCH_APP/
+build_clutch.py
 
 # Ignore secret keys
 secret_keys/
