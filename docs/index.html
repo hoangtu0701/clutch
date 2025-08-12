@@ -50,14 +50,23 @@
       position:fixed; inset:-10vmax; z-index:-1; pointer-events:none; opacity:.7; filter:contrast(110%) brightness(110%);
       background: radial-gradient(60vmax 60vmax at 20% 0%, rgba(255,255,255,.06), transparent 60%),
                   radial-gradient(40vmax 40vmax at 80% 10%, rgba(255,255,255,.04), transparent 60%);
-      animation: drift 18s ease-in-out infinite alternate;
+      animation: drift 28s ease-in-out infinite alternate;
     }
-    @keyframes drift{ from{transform:translateY(0)} to{transform:translateY(-16px)} }
+    @keyframes drift{ from{transform:translateY(0)} to{transform:translateY(-12px)} }
     /* mouse spotlight */
     .spot{
       position:fixed; inset:0; z-index:-1; pointer-events:none;
       background: radial-gradient(240px 240px at var(--mx,50%) var(--my,40%), rgba(255,255,255,.08), transparent 60%);
       transition: background 120ms linear;
+    }
+    /* glow zone text fade */
+    .glow-zone :is(h1,h2,h3,h4,p,li,a,span){
+      opacity:.72;
+      transition:opacity .2s ease, text-shadow .2s ease;
+    }
+    .glow-zone :is(h1,h2,h3,h4,p,li,a,span).glow{
+      opacity:1;
+      text-shadow:0 0 8px var(--glow);
     }
     @media (prefers-reduced-motion: reduce){
       .noise, .bg{animation:none}
@@ -121,12 +130,12 @@
     }
     .card{
       background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px;
-      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
-      transform-style:preserve-3d;
+      transition:transform .35s cubic-bezier(.22,1,.36,1), box-shadow .3s ease, border-color .3s ease, background .3s ease;
+      transform-style:preserve-3d; will-change:transform;
     }
     .card h3{margin:0 0 6px}
     .card p{margin:0; color:var(--muted)}
-    .card:hover{transform:translateY(-3px) rotateX(1deg) rotateY(-1deg); border-color:#242428; box-shadow:0 14px 40px rgba(0,0,0,.45)}
+    .card:hover{border-color:#242428; box-shadow:0 14px 40px rgba(0,0,0,.45)}
     .card .dot{
       width:8px; height:8px; border-radius:50%; background:#fff; display:inline-block; margin-right:8px; opacity:.9
     }
@@ -201,7 +210,7 @@
     </nav>
   </header>
 
-  <main id="top">
+  <main id="top" class="glow-zone">
     <!-- HERO -->
     <section class="hero wrap reveal">
       <img class="logo" src="./assets/clutch_logo.png" alt="Clutch logo">
@@ -326,10 +335,10 @@
   <!-- Tiny, dependency-free effects inspired by lightweight landing pages -->
   <svg width="0" height="0" style="position:absolute">
     <filter id="wavy">
-      <feTurbulence baseFrequency="0.004" numOctaves="2" seed="3" type="fractalNoise">
-        <animate attributeName="baseFrequency" dur="16s" values="0.004;0.006;0.004" repeatCount="indefinite" />
+      <feTurbulence baseFrequency="0.0025" numOctaves="1" seed="3" type="fractalNoise">
+        <animate attributeName="baseFrequency" dur="20s" values="0.0025;0.0035;0.0025" repeatCount="indefinite" />
       </feTurbulence>
-      <feDisplacementMap in="SourceGraphic" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+      <feDisplacementMap in="SourceGraphic" scale="3" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </svg>
 
@@ -358,21 +367,38 @@
     // Tilt cards
     const tilts = document.querySelectorAll('.tilt');
     tilts.forEach(card=>{
-      card.addEventListener('mousemove', (e)=>{
+      let raf;
+      card.addEventListener('mousemove',(e)=>{
         const r = card.getBoundingClientRect();
         const x = (e.clientX - r.left) / r.width - .5;
         const y = (e.clientY - r.top) / r.height - .5;
-        card.style.transform = `rotateX(${(-y*4)}deg) rotateY(${(x*4)}deg) translateY(-2px)`;
+        const rx = (-y*6);
+        const ry = (x*6);
+        if(raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(()=>{
+          card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateY(-3px)`;
+        });
       });
-      card.addEventListener('mouseleave', ()=>{ card.style.transform = ''; });
+      card.addEventListener('mouseleave', ()=>{
+        if(raf) cancelAnimationFrame(raf);
+        card.style.transform = '';
+      });
     });
 
-    // Mouse spotlight
+    // Mouse spotlight + glow text
     const spot = document.querySelector('.spot');
+    const zone = document.querySelector('.glow-zone');
+    let glowEl;
     window.addEventListener('pointermove', (e)=>{
       const x = e.clientX, y = e.clientY;
       spot.style.setProperty('--mx', x+'px');
       spot.style.setProperty('--my', y+'px');
+      const el = document.elementFromPoint(x,y);
+      if(glowEl && glowEl !== el) glowEl.classList.remove('glow');
+      if(el && zone.contains(el) && el.matches('h1,h2,h3,h4,p,li,a,span')){
+        el.classList.add('glow');
+        glowEl = el;
+      }
     }, {passive:true});
 
     // Apply subtle wavy filter to hero + cards for a living UI feel
