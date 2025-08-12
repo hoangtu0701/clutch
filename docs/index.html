@@ -81,7 +81,7 @@
       width:92px; height:92px; margin:0 auto 14px; border-radius:20px;
       box-shadow: 0 12px 36px rgba(0,0,0,.55);
     }
-    h1{margin:0 0 8px; font-size:46px; line-height:1.06; letter-spacing:.3px; font-weight:900}
+    h1{margin:0 0 14px; font-size:46px; line-height:1.06; letter-spacing:.3px; font-weight:900}
     .tagline{max-width:820px; margin:0 auto 18px; color:var(--muted)}
     .badges{
       display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin:18px 0 10px;
@@ -91,7 +91,7 @@
       padding:8px 12px; border-radius:999px; font-weight:700; color:#fff; opacity:1;
     }
     .cta-row{display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin:18px 0 6px}
-    .hero .cta-row{margin-top:36px}
+    .hero .cta-row{margin-top:50px}
     .btn{
       padding:11px 16px; border-radius:14px; border:1px solid var(--line);
       background:var(--card-2); font-weight:800; color:#fff; transform:translateZ(0);
@@ -100,7 +100,6 @@
     }
     .btn.primary{background:linear-gradient(135deg,#0e0e11,#151519)}
     .btn:hover{transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,0,0,.45)}
-    .keys-hint{font-size:13px; opacity:.78; margin-top:6px}
 
     section h2{
       font-size:24px; letter-spacing:.6px; margin:8px 0 20px; text-transform:uppercase;
@@ -167,6 +166,15 @@
     }
 
     #why{padding-bottom:120px; overflow:hidden}
+
+    .card .dot{ display:none }            
+    .cards .card h3{ text-align:center } 
+
+    .feature-list .tick{ display:none }        
+    .feature-list li{                       
+      justify-content:center; 
+      text-align:center;
+    }
   </style>
 </head>
 <body>
@@ -201,7 +209,6 @@
       <div class="cta-row">
         <a class="btn primary magnet" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">Open GitHub</a>
       </div>
-      <p class="keys-hint">Install guide lives on GitHub. You’ll use your own API keys.</p>
     </section>
 
     <section id="why" class="wrap reveal">
@@ -237,15 +244,15 @@
     <section id="features" class="wrap reveal">
       <h2>Key features</h2>
       <ul class="feature-list">
-        <li><span class="tick">✓</span><span>“Hey Jarvis” wake word (OpenWakeWord + VAD)</span></li>
+        <li><span class="tick">✓</span><span>“Hey Jarvis” wake word</span></li>
         <li><span class="tick">✓</span><span>Realtime STT with partials</span></li>
-        <li><span class="tick">✓</span><span>CS2 GSI + multi-region screenshots (radar + alive counters)</span></li>
-        <li><span class="tick">✓</span><span>LLM streaming brain (OpenAI Responses API)</span></li>
-        <li><span class="tick">✓</span><span>Instant TTS: Google / Piper / Coqui with smart fallback</span></li>
-        <li><span class="tick">✓</span><span>Immediate speech stop on interrupt (“Hey Jarvis” again)</span></li>
-        <li><span class="tick">✓</span><span>Bomb & round timers (local, resilient)</span></li>
-        <li><span class="tick">✓</span><span>Windows desktop UI (PyQt)</span></li>
-        <li><span class="tick">✓</span><span>MIT open-source license</span></li>
+        <li><span class="tick">✓</span><span>CS2 GSI + multi-region screenshots</span></li>
+        <li><span class="tick">✓</span><span>LLM streaming brain</span></li>
+        <li><span class="tick">✓</span><span>Instant TTS: Google / Piper / Coqui</span></li>
+        <li><span class="tick">✓</span><span>Immediate speech stop on interrupt</span></li>
+        <li><span class="tick">✓</span><span>Bomb & round timers</span></li>
+        <li><span class="tick">✓</span><span>Windows desktop UI</span></li>
+        <li><span class="tick">✓</span><span>Auto GSI setup</span></li>
       </ul>
     </section>
 
@@ -270,7 +277,7 @@
         <li>
           <span class="num">4</span>
           <h4>Think</h4>
-          <p>OpenAI model reasons in context for concise, usable calls.</p>
+          <p>The brain reasons in context for concise, instantly usable calls.</p>
         </li>
         <li>
           <span class="num">5</span>
@@ -282,7 +289,7 @@
 
     <section class="wrap cta reveal">
       <h2>Get Clutch</h2>
-      <p>No demo or downloads here — head to GitHub for the install manual.</p>
+      <p>Please head to GitHub for the demo and installation manual.</p>
       <div class="cta-row">
         <a class="btn primary magnet" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">Open GitHub</a>
       </div>
@@ -382,8 +389,8 @@
     let lastY = window.scrollY;
     window.addEventListener('scroll', ()=>{
       const y = window.scrollY;
-      if (y > lastY + 4) nav.classList.add('hide');
-      else if (y < lastY - 4) nav.classList.remove('hide');
+      if (y < lastY) nav.classList.remove('hide');
+      else if (y > lastY) nav.classList.add('hide');
       lastY = y;
     }, {passive:true});
   </script>
