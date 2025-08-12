@@ -109,7 +109,7 @@ models/
 ├── tiny.en/     # Wakeword + transcription models
 ```
 
-Place the folder inside your Clutch project directory.
+Place the whole models/ folder inside your Clutch project directory.
 
 ---
 
