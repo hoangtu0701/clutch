@@ -191,6 +191,25 @@
         scroll-snap-align: center;
         transform: none !important;     
       }
+
+      #features .feature-list {
+        display: flex !important;        
+        overflow-x: auto;
+        gap: 16px;
+        padding: 8px 16px 24px;          
+        scroll-snap-type: x proximity;  
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;         
+      }
+      #features .feature-list::-webkit-scrollbar { display: none; }
+
+      #features .feature-list li {
+        flex: 0 0 calc(100% - 32px);   
+        scroll-snap-align: center;
+        min-height: 100px;              
+        height: auto;                    
+        transform: none !important;      
+      }
     }
   </style>
 </head>
