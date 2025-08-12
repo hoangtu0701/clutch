@@ -123,9 +123,6 @@
     .card h3{margin:0 0 8px}
     .card p{margin:0; color:var(--muted)}
     .card:hover{transform:translateY(-4px); border-color:#2a2a2e; box-shadow:0 20px 40px rgba(0,0,0,.5)}
-    .card .dot{
-      width:8px; height:8px; border-radius:50%; background:#fff; display:inline-block; margin-right:8px; opacity:.9
-    }
 
     .feature-list{
       list-style:none; padding:0; margin:10px 0 0;
@@ -137,7 +134,6 @@
       display:flex; align-items:center; justify-content:flex-start; gap:10px;
       min-height:100px; height:100%;
     }
-    .feature-list .tick{width:16px; height:16px; border-radius:4px; border:1px solid #2a2a2e; background:#121214; display:grid;place-items:center; font-size:12px}
     .feature-list span{color:#e9e9e9}
 
     .steps{
@@ -166,11 +162,9 @@
     }
 
     #why{padding-bottom:120px; overflow:hidden}
-
-    .card .dot{ display:none }            
+     
     .cards .card h3{ text-align:center } 
 
-    .feature-list .tick{ display:none }        
     .feature-list li{                       
       justify-content:center; 
       text-align:center;
@@ -215,28 +209,24 @@
       <h2>Why Clutch</h2>
       <div class="cards">
         <article class="card tilt">
-          <h3><span class="dot"></span>Instant voice feedback</h3>
+          <h3>Instant voice feedback</h3>
           <p>Streaming pipeline speaks the earliest tokens ASAP for a “go-now” feel.</p>
         </article>
         <article class="card tilt">
-          <h3><span class="dot"></span>Grounded in your match</h3>
+          <h3>Grounded in your match</h3>
           <p>Combines <strong>CS2 GSI</strong> with targeted screenshots (radar + alive counts) for context-aware calls.</p>
         </article>
         <article class="card tilt">
-          <h3><span class="dot"></span>Always interruptible</h3>
+          <h3>Always interruptible</h3>
           <p>Say <strong>“Hey Jarvis”</strong> mid-sentence to cut TTS and re-ask — no waiting.</p>
         </article>
         <article class="card tilt">
-          <h3><span class="dot"></span>Voice that keeps up</h3>
+          <h3>Voice that keeps up</h3>
           <p>Uses <strong>Google Chirp 3 HD</strong> when available, with automatic <strong>Piper</strong>/<strong>Coqui</strong> fallback chosen by VRAM.</p>
         </article>
         <article class="card tilt">
-          <h3><span class="dot"></span>Round-aware timing</h3>
+          <h3>Round-aware timing</h3>
           <p>Freeze → Live → Bomb plant → Round end — a local badge tracks time so advice stays in rhythm.</p>
-        </article>
-        <article class="card tilt">
-          <h3><span class="dot"></span>Built for Windows</h3>
-          <p>Clean PyQt desktop UI with live badges and tidy secret-keys setup.</p>
         </article>
       </div>
     </section>
@@ -244,15 +234,15 @@
     <section id="features" class="wrap reveal">
       <h2>Key features</h2>
       <ul class="feature-list">
-        <li><span class="tick">✓</span><span>“Hey Jarvis” wake word</span></li>
-        <li><span class="tick">✓</span><span>Realtime STT with partials</span></li>
-        <li><span class="tick">✓</span><span>CS2 GSI + multi-region screenshots</span></li>
-        <li><span class="tick">✓</span><span>LLM streaming brain</span></li>
-        <li><span class="tick">✓</span><span>Instant TTS: Google / Piper / Coqui</span></li>
-        <li><span class="tick">✓</span><span>Immediate speech stop on interrupt</span></li>
-        <li><span class="tick">✓</span><span>Bomb & round timers</span></li>
-        <li><span class="tick">✓</span><span>Windows desktop UI</span></li>
-        <li><span class="tick">✓</span><span>Auto GSI setup</span></li>
+        <li><span>Windows desktop UI</span></li>
+        <li><span>Auto GSI setup</span></li>
+        <li><span>Bomb & round timers</span></li>
+        <li><span>“Hey Jarvis” wake word</span></li>
+        <li><span>Realtime STT with partials</span></li>
+        <li><span>CS2 GSI + multi-region screenshots</span></li>
+        <li><span>LLM streaming brain</span></li>
+        <li><span>Instant TTS: Google / Piper / Coqui</span></li>
+        <li><span>Immediate speech stop on interrupt</span></li>
       </ul>
     </section>
 
