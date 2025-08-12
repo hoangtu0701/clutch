@@ -18,7 +18,14 @@ https://github.com/user-attachments/assets/c0977d21-d7a4-49e0-9168-cdaa2423d8c9
 - 🎙️ Real-time speech transcription (STT)
 - 🧠 Tactical advice powered by streaming LLMs
 - 📸 GSI + screenshot parsing for contextual awareness
-- 🗣️ Coqui XTTS playback for ultra-fast voice responses
+- 🗣️ **TTS pipeline with smart fallback**  
+  - Primary: **Google Chirp 3 HD (streaming)** if a Google key is present  
+  - Fallbacks: **Piper** (low-VRAM) or **Coqui XTTS v2** (high-VRAM) — chosen automatically
+- ⏱ **In-round timer badge** with auto-detection for freezetime, live, bomb plant, and round end
+- 🖼️ **Multi-region screen capture** (radar + alive counters) to boost tactical precision
+- 🪟 **Desktop UI** (PyQt) with live badges for TTS engine and round timer
+- 🗂️ **Secret keys folder** (no more `.env`) for simple, portable configuration
+- 🛠️ **Auto GSI setup**: copies `gamestate_integration_clutch.cfg` to your CS2 `cfg` folder if missing
 
 ---
 
@@ -30,14 +37,20 @@ clutch/
 ├── requirements.txt                    # All pip packages required (generated via pip freeze)
 ├── models/                             # TTS & STT models (must download via Google Drive)
 │   ├── Coqui/                          # XTTS model files
+│   ├── Piper/                          # Piper runtime + voice (.onnx + .json)
 │   └── tiny.en/                        # OpenWakeWord + STT model
 ├── gamestate_integration_clutch.cfg    # GSI config (auto-copied into CS2 directory)
+├── secret_keys/                        # Store keys here (see setup)
+│   ├── openai.key
+│   ├── openrouter.key                  # optional (not used right now)
+│   └── google_tts_key.json             # optional (enables Google TTS streaming)
 ├── venv/                               # Pre-installed Python environment
 │   └── ...                             # Contains all required packages
 ├── build_clutch.py                     # Optional: used to bundle into a `.bat` app
 ├── embedded_python/                    # Optional: portable Python
-├── .env.example                        # Example environment file for storing API keys
 ```
+
+> ℹ️ The previous `.env` flow is **no longer used**.
 
 ---
 
@@ -54,7 +67,7 @@ cd clutch
 
 ```bash
 python -m venv venv
-venv\Scripts\activate
+venv\Scriptsctivate
 ```
 
 ### 3. Install all dependencies
@@ -65,16 +78,21 @@ pip install -r requirements.txt
 
 > ⚠️ This installs everything exactly as used in development (from `pip freeze`).
 
-### 4. Set up your API keys
+### 4. Create your `secret_keys` folder (new)
 
-```bash
-# Copy and rename the example env file to env and edit it with your own keys
-copy .env.example .env
+Create a folder at the project root named `secret_keys/` with up to **three** files:
 
-# Then open `.env` and paste your API keys like:
-OPENAI_API_KEY=sk...
-OPENROUTER_API_KEY=sk...
 ```
+secret_keys/
+├── openai.key                # REQUIRED: paste your OpenAI API key (just the key string)
+├── openrouter.key            # OPTIONAL: not needed right now
+└── google_tts_key.json       # OPTIONAL: service account JSON to enable Google TTS streaming
+```
+
+- If **`google_tts_key.json` is missing**, Clutch will **automatically** use local TTS: Piper (for low VRAM) or Coqui XTTS (for high VRAM).
+- If **`openai.key` is missing**, the app cannot call the model and won’t work.
+
+> ⏳ **Heads-up:** first startup can take a bit (model + audio warmup). Leave the window alone for ~30–60s on first run.
 
 ---
 
@@ -90,6 +108,10 @@ You’ll get:
 ```
 models/
 ├── Coqui/       # Coqui XTTS model files (e.g., model.pth, config.json)
+├── Piper/       # Piper runtime + a voice, e.g.:
+│   ├── piper/piper.exe
+│   ├── en_US-norman-medium.onnx
+│   └── en_US-norman-medium.onnx.json
 ├── tiny.en/     # Wakeword + transcription models
 ```
 
@@ -117,5 +139,15 @@ Say **“Hey Jarvis”**, then start talking. Clutch will:
 - Analyze everything with LLMs
 - Respond instantly with tactical voice coaching
 
+> 💡 While Clutch is speaking, you can say **“Hey Jarvis”** again to interrupt and ask something new.
+
 ---
 
+## 🧩 Notes & Troubleshooting
+
+- **GSI auto-setup:** on first run, the app tries to copy `gamestate_integration_clutch.cfg` into your CS2 `cfg` folder. If it fails, run the app as admin and/or copy it manually.
+- **TTS selection:** with no Google key, Clutch auto-picks **Piper** if your GPU has low VRAM (≈ <12GB) or **Coqui XTTS** if there’s plenty.
+- **Round timer badge:** shows `mm:ss` and auto-switches to a bomb timer when planted.
+- **Screenshots:** only captured if a visible “Counter-Strike 2” window is found on your desktop.
+
+---
