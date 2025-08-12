@@ -44,14 +44,8 @@ clutch/
 │   ├── openai.key
 │   ├── openrouter.key                  # optional (not used right now)
 │   └── google_tts_key.json             # optional (enables Google TTS streaming)
-├── venv/                               # Pre-installed Python environment
-│   └── ...                             # Contains all required packages
-├── build_clutch.py                     # Optional: used to bundle into a `.bat` app
-├── embedded_python/                    # Optional: portable Python
+├── venv/                               # To-be-installed packages & Python environment
 ```
-
-> ℹ️ The previous `.env` flow is **no longer used**.
-
 ---
 
 ## ⚙️ Setup Instructions (Windows Only)
@@ -67,7 +61,7 @@ cd clutch
 
 ```bash
 python -m venv venv
-venv\Scriptsctivate
+venv\Scripts\activate
 ```
 
 ### 3. Install all dependencies
@@ -78,7 +72,7 @@ pip install -r requirements.txt
 
 > ⚠️ This installs everything exactly as used in development (from `pip freeze`).
 
-### 4. Create your `secret_keys` folder (new)
+### 4. Create your `secret_keys` folder
 
 Create a folder at the project root named `secret_keys/` with up to **three** files:
 
@@ -86,19 +80,19 @@ Create a folder at the project root named `secret_keys/` with up to **three** fi
 secret_keys/
 ├── openai.key                # REQUIRED: paste your OpenAI API key (just the key string)
 ├── openrouter.key            # OPTIONAL: not needed right now
-└── google_tts_key.json       # OPTIONAL: service account JSON to enable Google TTS streaming
+└── google_tts_key.json       # OPTIONAL: paste your service account JSON to enable Google TTS streaming
 ```
 
 - If **`google_tts_key.json` is missing**, Clutch will **automatically** use local TTS: Piper (for low VRAM) or Coqui XTTS (for high VRAM).
 - If **`openai.key` is missing**, the app cannot call the model and won’t work.
 
-> ⏳ **Heads-up:** first startup can take a bit (model + audio warmup). Leave the window alone for ~30–60s on first run.
+> ⏳ **Heads-up:** first startup can take a bit (model + audio warmup). Leave the window alone for ~30s on first run.
 
 ---
 
-## 📦 Download Required Models & Optional Python Runtime
+## 📦 Download Required Models
 
-The following folders are **not included** in the GitHub repo due to size limits.
+The following folder is **not included** in the GitHub repo due to size limits.
 
 📥 Download from Google Drive:  
 👉 [Clutch folders](https://drive.google.com/drive/folders/1wAPdx7JF7OL3bMVblcqT-djFfrwNv_vB?usp=sharing)
@@ -115,13 +109,7 @@ models/
 ├── tiny.en/     # Wakeword + transcription models
 ```
 
-Optionally:
-
-```
-embedded_python/ # Used in build_clutch.py for portable app building
-```
-
-Place these folders inside your project directory.
+Place the folder inside your Clutch project directory.
 
 ---
 
