@@ -21,12 +21,6 @@ os.makedirs(RELEASE_DIR)
 # Copy python files
 shutil.copy("clutch_loop.py", os.path.join(RELEASE_DIR, "clutch_loop.py"))
 
-# Copy .env file
-shutil.copy(".env", os.path.join(RELEASE_DIR, ".env"))
-
-# Copy Google TTS key file
-shutil.copy("google_tts_key.json", os.path.join(RELEASE_DIR, "google_tts_key.json"))
-
 # Copy GSI config file
 shutil.copy("gamestate_integration_clutch.cfg", os.path.join(RELEASE_DIR, "gamestate_integration_clutch.cfg"))
 

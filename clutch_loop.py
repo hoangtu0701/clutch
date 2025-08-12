@@ -41,12 +41,26 @@ load_dotenv()
 # Clients & Usage Setup
 # ---------------------
 
+SECRET_DIR = os.path.join(base_dir, "secret_keys")
+OPENAI_KEY_FILE = os.path.join(SECRET_DIR, "openai.key")
+OPENROUTER_KEY_FILE = os.path.join(SECRET_DIR, "openrouter.key")
+GOOGLE_TTS_KEY_PATH = os.path.join(SECRET_DIR, "google_tts_key.json")
+GOOGLE_TTS_SAMPLE_RATE = 24000 
+GOOGLE_TTS_VOICE = "en-US-Chirp3-HD-Algieba"
+
+def _read_text_key(path: str):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except Exception:
+        return None
+    
 openai_client = OpenAI(
-  api_key=os.getenv("OPENAI_API_KEY")
+  api_key=_read_text_key(OPENAI_KEY_FILE)
 )
 
 openrouter_client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_key=_read_text_key(OPENROUTER_KEY_FILE),
     base_url="https://openrouter.ai/api/v1"
 )
 
@@ -56,10 +70,6 @@ openrouter_model_ids = {
     "DeepSeek R1 0528": "deepseek/deepseek-r1-0528:free",
     "LLaMA 3.1 405B Instruct": "meta-llama/llama-3.1-405b-instruct:free"
 }
-
-GOOGLE_TTS_KEY_PATH = os.path.join(base_dir, "google_tts_key.json")
-GOOGLE_TTS_SAMPLE_RATE = 24000 
-GOOGLE_TTS_VOICE = "en-US-Chirp3-HD-Algieba"
 
 
 

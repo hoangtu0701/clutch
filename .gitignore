@@ -22,8 +22,5 @@ __pycache__/
 # Ignore any build artifacts
 CLUTCH_APP/
 
-# Ignore env file
-.env
-
-# Ignore Google Clout TTS key
-google_tts_key.json
+# Ignore secret keys
+secret_keys/
