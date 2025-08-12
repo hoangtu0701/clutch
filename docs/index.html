@@ -11,24 +11,20 @@
   <meta property="og:image" content="./assets/clutch_logo.png">
   <meta name="theme-color" content="#0b0b0c">
   <style>
-    /* =======================
-       ULTRA MODERN B/W THEME
-       ======================= */
     :root{
-      --bg: #0b0b0c;        /* onyx */
-      --ink: #f0f0f3;       /* soft white */
-      --muted:#c7c7cc;      /* cool gray (brighter) */
-      --line:#1a1a1d;       /* hairline */
-      --card:#111214;       /* deep card */
-      --card-2:#0e0f10;     /* deeper card */
-      --glow:#f4f4f7;       /* subtle white for glows */
+      --bg:#0b0b0c;
+      --ink:#f0f0f3;
+      --muted:#c7c7cc;
+      --line:#1a1a1d;
+      --card:#111214;
+      --card-2:#0e0f10;
+      --glow:#f4f4f7;
     }
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
     img{max-width:100%;display:block}
     a{color:inherit;text-decoration:none}
 
-    /* ===== Animated background (lightweight, wavy, no libs) ===== */
     .bg{
       position:fixed; inset:0; z-index:-3; pointer-events:none;
       background:
@@ -45,7 +41,6 @@
         repeating-linear-gradient(90deg, transparent 0 29px, rgba(255,255,255,.06) 29px 30px);
       mask: radial-gradient(120vmax 60vmax at 50% -20%, #000 25%, transparent 70%);
     }
-    /* Organic wave via SVG filter */
     .noise{
       position:fixed; inset:-10vmax; z-index:-1; pointer-events:none; opacity:.7; filter:contrast(110%) brightness(110%);
       background: radial-gradient(60vmax 60vmax at 20% 0%, rgba(255,255,255,.06), transparent 60%),
@@ -53,15 +48,15 @@
       animation: drift 20s ease-in-out infinite alternate;
     }
     @keyframes drift{ from{transform:translateY(0)} to{transform:translateY(-20px)} }
-    /* mouse spotlight */
+
     .spot{
       position:fixed; inset:0; z-index:50; pointer-events:none;
       background: radial-gradient(320px 320px at var(--mx,50%) var(--my,40%), rgba(255,255,255,.15), transparent 70%);
       mix-blend-mode:screen;
-      transition: background 120ms linear;
-      display:none;
+      transition: opacity 280ms ease, background 120ms linear;
+      opacity:0;
     }
-    /* glow zone text fade */
+
     .glow-zone :is(h1,h2,h3,h4,p,li,a,span){
       opacity:.85;
       transition:opacity .2s ease;
@@ -78,7 +73,6 @@
       .noise, .bg{animation:none}
     }
 
-    /* ===== Top nav ===== */
     .nav{
       position:sticky; top:0; z-index:20;
       display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:24px;
@@ -90,10 +84,8 @@
     .nav-links a:hover{background:#141416}
     .nav-links .cta{border:1px solid var(--line); padding:8px 12px; background:#0f0f11; font-weight:800}
 
-    /* ===== Layout container ===== */
     .wrap{max-width:1200px; margin:0 auto; padding:60px 24px}
 
-    /* ===== Hero ===== */
     .hero{
       padding:96px 16px 32px; text-align:center; position:relative; isolation:isolate;
     }
@@ -121,14 +113,12 @@
     .btn:hover{transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,0,0,.45)}
     .keys-hint{font-size:13px; opacity:.78; margin-top:6px}
 
-    /* ===== Sections ===== */
     section h2{
       font-size:24px; letter-spacing:.6px; margin:8px 0 20px; text-transform:uppercase;
       color:#f1f1f1; opacity:.9; text-align:center;
     }
     section p{text-align:center;}
 
-    /* ===== Feature cards (tilt + reveal) ===== */
     .cards{
       display:grid; gap:24px; margin-top:16px;
       grid-template-columns:repeat(3,1fr); grid-auto-rows:1fr;
@@ -149,7 +139,6 @@
       width:8px; height:8px; border-radius:50%; background:#fff; display:inline-block; margin-right:8px; opacity:.9
     }
 
-    /* ===== Feature list ===== */
     .feature-list{
       list-style:none; padding:0; margin:10px 0 0;
       display:grid; gap:20px;
@@ -163,7 +152,6 @@
     .feature-list .tick{width:16px; height:16px; border-radius:4px; border:1px solid #2a2a2e; background:#121214; display:grid;place-items:center; font-size:12px}
     .feature-list span{color:#e9e9e9}
 
-    /* ===== Steps ===== */
     .steps{
       list-style:none; padding:0; margin:10px 0 0;
       display:grid; gap:20px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); grid-auto-rows:1fr;
@@ -178,31 +166,26 @@
     .steps h4{margin:2px 0 6px}
     .steps p{margin:0; color:var(--muted)}
 
-    /* ===== Section note / CTA ===== */
     .cta{text-align:center}
-
-    /* ===== Footer ===== */
     .footer{color:#bdbdc4; text-align:center}
 
-    /* ===== Scroll reveal ===== */
     .reveal{opacity:0; transform:translateY(12px); transition:opacity .5s ease, transform .5s ease}
     .reveal.show{opacity:1; transform:none}
 
-    /* ===== Mobile ===== */
     @media (max-width:540px){
       h1{font-size:36px}
       .hero .logo{width:80px; height:80px}
     }
+
+    #why{padding-bottom:120px}
   </style>
 </head>
 <body>
-  <!-- Layers -->
   <div class="bg"></div>
   <div class="grid" aria-hidden="true"></div>
   <div class="noise" aria-hidden="true"></div>
   <div class="spot" aria-hidden="true"></div>
 
-  <!-- NAV -->
   <header class="nav">
     <nav class="nav-links">
       <a href="#why">Why</a>
@@ -213,7 +196,6 @@
   </header>
 
   <main id="top" class="glow-zone">
-    <!-- HERO -->
     <section class="hero wrap reveal">
       <img class="logo" src="./assets/clutch_logo.png" alt="Clutch logo">
       <h1 class="glow-title">Real-time AI Voice Coach for CS2</h1>
@@ -221,8 +203,6 @@
         Wake word → STT → GSI + radar snapshots → LLM → <strong>instant TTS</strong>. <br/>
         Ask naturally, <em>interrupt anytime</em>, and get round-winning calls in the moment.
       </p>
-
-      <!-- crisp value props -->
       <div class="badges">
         <span class="pill">Say “Hey Jarvis”</span>
         <span class="pill">Sub-second first audio*</span>
@@ -230,14 +210,12 @@
         <span class="pill">Google → Piper/Coqui fallback</span>
         <span class="pill">Windows desktop UI</span>
       </div>
-
       <div class="cta-row">
         <a class="btn primary magnet" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">Open GitHub</a>
       </div>
       <p class="keys-hint">Install guide lives on GitHub. You’ll use your own API keys.</p>
     </section>
 
-    <!-- WHY -->
     <section id="why" class="wrap reveal">
       <h2>Why Clutch</h2>
       <div class="cards">
@@ -268,7 +246,6 @@
       </div>
     </section>
 
-    <!-- FEATURES -->
     <section id="features" class="wrap reveal">
       <h2>Key features</h2>
       <ul class="feature-list">
@@ -284,7 +261,6 @@
       </ul>
     </section>
 
-    <!-- HOW IT WORKS -->
     <section id="how" class="wrap reveal">
       <h2>How it works</h2>
       <ol class="steps">
@@ -316,7 +292,6 @@
       </ol>
     </section>
 
-    <!-- CTA -->
     <section class="wrap cta reveal">
       <h2>Get Clutch</h2>
       <p>No demo or downloads here — head to GitHub for the install manual.</p>
@@ -330,7 +305,6 @@
     <p>© <span id="y">2025</span> Clutch</p>
   </footer>
 
-  <!-- Tiny, dependency-free effects inspired by lightweight landing pages -->
   <svg width="0" height="0" style="position:absolute">
       <filter id="wavy">
         <feTurbulence baseFrequency="0.0018" numOctaves="1" seed="3" type="fractalNoise">
@@ -341,16 +315,13 @@
   </svg>
 
   <script>
-    // Year
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // Scroll reveal
     const io = ('IntersectionObserver' in window) ? new IntersectionObserver((entries)=>{
       for(const e of entries){ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target); } }
     }, {threshold:.12}) : null;
     document.querySelectorAll('.reveal').forEach(el => io ? io.observe(el) : el.classList.add('show'));
 
-    // Magnetic buttons (gentle)
     const mags = document.querySelectorAll('.magnet');
     mags.forEach(btn=>{
       btn.addEventListener('mousemove', e=>{
@@ -362,7 +333,6 @@
       btn.addEventListener('mouseleave', ()=>{ btn.style.transform = 'translate(0,0)'; });
     });
 
-    // Tilt cards
     const tilts = document.querySelectorAll('.tilt');
     tilts.forEach(card=>{
       let raf;
@@ -383,20 +353,21 @@
       });
     });
 
-    // Mouse spotlight + title glow
     const spot = document.querySelector('.spot');
     const title = document.querySelector('.glow-title');
     const why = document.getElementById('why');
-    const toggleSpot = ()=>{
-      const bottom = why.offsetTop + why.offsetHeight;
-      spot.style.display = (window.scrollY >= bottom) ? 'block' : 'none';
-    };
-    toggleSpot();
-    window.addEventListener('scroll', toggleSpot, {passive:true});
+
+    function updateSpotOpacity(pointerY){
+      const bottom = why.getBoundingClientRect().bottom;
+      const target = pointerY > bottom ? 1 : 0;
+      if (spot.style.opacity !== String(target)) spot.style.opacity = target;
+    }
+
     window.addEventListener('pointermove', (e)=>{
       const x = e.clientX, y = e.clientY;
       spot.style.setProperty('--mx', x+'px');
       spot.style.setProperty('--my', y+'px');
+      updateSpotOpacity(y);
       if(title){
         const r = title.getBoundingClientRect();
         const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
@@ -404,7 +375,6 @@
       }
     }, {passive:true});
 
-    // Equalize box heights
     const equalize = (sel)=>{
       const els = document.querySelectorAll(sel);
       let max=0;
@@ -417,7 +387,6 @@
       equalize('.steps li');
     });
 
-    // Apply subtle wavy filter to hero + cards for a living UI feel
     const wavify = (els)=> els.forEach(el=> el.style.filter = 'url(#wavy)');
     wavify([document.querySelector('.hero'), ...document.querySelectorAll('.card')]);
   </script>
