@@ -2,7 +2,7 @@
 
 🎙️ **Clutch** is a real-time voice assistant and tactical AI coach for Counter-Strike 2.
 
-It listens to your voice, analyzes your game state (via GSI + screenshots), and responds with round-winning advice using AI models — all spoken back in real time.
+It listens to your voice, analyzes your game state (via GSI + screenshots), and responds with round-winning advice — all spoken back in real time.
 
 ---
 
