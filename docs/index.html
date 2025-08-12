@@ -4,194 +4,145 @@
   <meta charset="utf-8" />
   <title>Clutch — Real-time AI Voice Coach for CS2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Say 'Hey Jarvis' and get instant, voice-first CS2 coaching. Clutch reads GSI + screenshots, reasons with LLMs, and speaks back in real time." />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="Clutch — Real-time AI Voice Coach for CS2" />
-  <meta property="og:description" content="Wake word → STT → GSI + screenshots → LLM → instant TTS. Sub-second 'first audio' coaching." />
-  <meta property="og:image" content="https://hoangtu0701.github.io/clutch/assets/social-card.png" />
-  <meta property="og:url" content="https://hoangtu0701.github.io/clutch/" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-
-  <link rel="icon" href="./clutch_logo.png" />
+  <meta name="description" content="Say 'Hey Jarvis' and get instant voice-first CS2 coaching. Clutch reads GSI + screenshots, reasons with LLMs, and speaks back in real time." />
+  <link rel="icon" href="./assets/clutch_logo.png" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <!-- Background FX (black & white orbs + wave) -->
-  <div class="fx">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <svg class="wave" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M0,224L48,197.3C96,171,192,117,288,90.7C384,64,480,64,576,96C672,128,768,192,864,208C960,224,1056,192,1152,160C1248,128,1344,96,1392,80L1440,64L1440,0L0,0Z"></path>
-    </svg>
-  </div>
+  <!-- Minimal, resilient, gorgeous B/W layout with zero external deps -->
 
-  <header class="wrap hero">
-    <img class="logo" src="./clutch_logo.png" alt="Clutch logo" />
-    <h1 class="shine">CLUTCH</h1>
-    <p class="tagline">Real-time voice assistant & tactical AI coach for Counter-Strike 2</p>
-    <div class="cta-row">
-      <a class="btn primary" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">View on GitHub</a>
-      <a class="btn" href="#features">Features</a>
-      <a class="btn" href="#how">How it works</a>
-    </div>
-    <p class="keys-hint">Setup lives on GitHub. You’ll use your own API keys — see README.</p>
+  <!-- Decorative background (CSS-only in style.css) -->
+  <div class="bg"></div>
+
+  <header class="nav">
+    <a class="brand" href="#top">
+      <img src="./assets/clutch_logo.png" alt="Clutch logo" />
+      <span>Clutch</span>
+    </a>
+    <nav>
+      <a href="#why">Why</a>
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a class="cta" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">GitHub</a>
+    </nav>
   </header>
 
-  <!-- Marquee ticker -->
-  <section class="ticker" aria-label="Highlights">
-    <div class="track">
-      <span>“Hey Jarvis” Wake Word</span>
-      <span>Realtime STT</span>
-      <span>CS2 GSI + Screenshots</span>
-      <span>Streaming LLM (OpenAI / OpenRouter)</span>
-      <span>Instant TTS (Google / Piper / Coqui)</span>
-      <span>Interrupt Anytime</span>
-      <span>Bomb & Round Timer</span>
-      <span>Clean Windows App UI</span>
-    </div>
-  </section>
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <img class="hero-logo" src="./assets/clutch_logo.png" alt="Clutch logo" />
+      <h1>Real-time AI Voice Coach for CS2</h1>
+      <p class="tagline">
+        Wake word → STT → GSI + screenshots → LLM → instant TTS.<br />
+        Ask, interrupt, and get round-winning calls in real time.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn primary" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">View on GitHub</a>
+        <a class="btn" href="https://github.com/hoangtu0701/clutch#-setup-instructions-windows-only" target="_blank" rel="noopener">Read the README</a>
+      </div>
+      <p class="keys-hint">Setup is on GitHub. You’ll use your own API keys.</p>
+    </section>
 
-  <main>
-    <!-- Why section -->
+    <!-- WHY -->
     <section id="why" class="wrap">
-      <h2>Why players love Clutch</h2>
-      <div class="grid cards">
-        <article class="card tilt">
+      <h2>Why Clutch</h2>
+      <div class="cards">
+        <article class="card">
           <h3>Instant voice feedback</h3>
-          <p>Sub-second “first audio” using a streaming pipeline from model tokens straight to TTS.</p>
+          <p>Streaming pipeline speaks the first tokens ASAP for sub-second “first audio”.</p>
         </article>
-        <article class="card tilt">
-          <h3>Real CS2 context</h3>
-          <p>Combines <b>GSI</b> with targeted screenshots (radar + alive counts) to ground advice.</p>
+        <article class="card">
+          <h3>Grounded in CS2</h3>
+          <p>Combines <strong>GSI</strong> with targeted screenshots (radar + alive counts) to ground advice.</p>
         </article>
-        <article class="card tilt">
+        <article class="card">
           <h3>Always interruptible</h3>
-          <p>Say <b>“Hey Jarvis”</b> mid-sentence to cut TTS and ask again — no waiting.</p>
+          <p>Say <strong>“Hey Jarvis”</strong> mid-sentence to cut speech and ask again — no waiting.</p>
         </article>
-        <article class="card tilt">
+        <article class="card">
           <h3>Voice that keeps up</h3>
-          <p>Google Chirp 3 HD streaming when available, with automatic Piper/Coqui fallback.</p>
+          <p>Google Chirp 3 HD when available, with automatic Piper/Coqui fallback.</p>
         </article>
-        <article class="card tilt">
-          <h3>In-round timer badge</h3>
-          <p>Freeze → Live → Bomb plant → Round end — the timer adapts so your calls do too.</p>
+        <article class="card">
+          <h3>Round-aware timing</h3>
+          <p>Freeze → Live → Bomb plant → Round end — timer badge keeps calls in rhythm.</p>
         </article>
-        <article class="card tilt">
+        <article class="card">
           <h3>Built for Windows</h3>
-          <p>PyQt UI with smooth badges and a tidy setup that just works.</p>
+          <p>Clean PyQt UI, smooth badges, and a tidy local setup.</p>
         </article>
       </div>
     </section>
 
-    <!-- How it works -->
+    <!-- FEATURES -->
+    <section id="features" class="wrap">
+      <h2>Key features</h2>
+      <ul class="feature-list">
+        <li><span>“Hey Jarvis” wake word</span></li>
+        <li><span>Realtime STT with partials</span></li>
+        <li><span>CS2 GSI + multi-region screenshots</span></li>
+        <li><span>LLM streaming (OpenAI with OpenRouter fallback)</span></li>
+        <li><span>Instant TTS (Google / Piper / Coqui)</span></li>
+        <li><span>Immediate speech stop on interrupt</span></li>
+        <li><span>Bomb & round timers</span></li>
+        <li><span>Windows desktop UI (PyQt)</span></li>
+      </ul>
+      <div class="note">
+        No downloads here — grab it on GitHub and follow the README. You’ll need your own keys.
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
     <section id="how" class="wrap">
       <h2>How it works</h2>
-      <ol class="pipeline">
-        <li class="tilt">
-          <span class="step">1</span>
+      <ol class="steps">
+        <li>
+          <span class="num">1</span>
           <h4>Wake</h4>
-          <p>Say “Hey Jarvis”. OpenWakeWord + Silero VAD starts listening.</p>
+          <p>Say “Hey Jarvis”. OpenWakeWord + VAD starts the capture.</p>
         </li>
-        <li class="tilt">
-          <span class="step">2</span>
+        <li>
+          <span class="num">2</span>
           <h4>Hear</h4>
-          <p>Realtime STT streams partials for responsiveness.</p>
+          <p>Realtime STT streams partials so you see what’s heard instantly.</p>
         </li>
-        <li class="tilt">
-          <span class="step">3</span>
+        <li>
+          <span class="num">3</span>
           <h4>See</h4>
-          <p>Clutch reads CS2 GSI + captures targeted UI regions (radar, alive counters).</p>
+          <p>GSI + targeted screenshots (radar, alive counts) anchor the advice.</p>
         </li>
-        <li class="tilt">
-          <span class="step">4</span>
+        <li>
+          <span class="num">4</span>
           <h4>Think</h4>
-          <p>LLM (OpenAI via Responses API, with OpenRouter fallback) reasons in context.</p>
+          <p>LLM (OpenAI Responses API with OpenRouter fallback) reasons in context.</p>
         </li>
-        <li class="tilt">
-          <span class="step">5</span>
+        <li>
+          <span class="num">5</span>
           <h4>Speak</h4>
-          <p>Streaming TTS speaks tokens ASAP. Interrupt any time with “Hey Jarvis”.</p>
+          <p>Streaming TTS talks as tokens arrive. Interrupt anytime to re-ask.</p>
         </li>
       </ol>
     </section>
 
-    <!-- Features (marketing phrasing) -->
-    <section id="features" class="wrap">
-      <h2>Key features</h2>
-      <div class="grid features">
-        <div class="feat">
-          <h3>Wake word</h3>
-          <p>“Hey Jarvis” with safe debounce and late-wake protection.</p>
-        </div>
-        <div class="feat">
-          <h3>Realtime STT</h3>
-          <p>Fast partials, smart sentence detection.</p>
-        </div>
-        <div class="feat">
-          <h3>Context aware</h3>
-          <p>GSI snapshot + multi-image capture to anchor calls to reality.</p>
-        </div>
-        <div class="feat">
-          <h3>LLM streaming</h3>
-          <p>GPT-5 Responses API with graceful OpenRouter fallback.</p>
-        </div>
-        <div class="feat">
-          <h3>Instant TTS</h3>
-          <p>Google Chirp 3 HD when present; Piper/Coqui otherwise — chosen automatically.</p>
-        </div>
-        <div class="feat">
-          <h3>Windows UI</h3>
-          <p>Clean PyQt interface with TTS and timer badges.</p>
-        </div>
-      </div>
-
-      <details class="tech">
-        <summary>Under the hood (for nerds)</summary>
-        <ul>
-          <li>Local Flask GSI server + OpenCV region grabs</li>
-          <li>Token normalization & pause heuristics for natural speech</li>
-          <li>Thread-safe audio streams with immediate stop/clear on interrupt</li>
-          <li>Secret keys folder for simple local config</li>
-        </ul>
-      </details>
-    </section>
-
     <!-- CTA -->
-    <section id="cta" class="wrap cta-final">
+    <section class="wrap cta">
       <h2>Get Clutch</h2>
-      <p>No downloads here — grab it on GitHub and follow the README. You’ll use your own API keys.</p>
-      <div class="cta-row">
+      <p>No demo or downloads here — head to GitHub for the install manual.</p>
+      <div class="hero-ctas">
         <a class="btn primary" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">Open GitHub</a>
         <a class="btn" href="https://github.com/hoangtu0701/clutch#-setup-instructions-windows-only" target="_blank" rel="noopener">Read the README</a>
       </div>
+      <p class="keys-hint">Reminder: you’ll use your own API keys.</p>
     </section>
   </main>
 
-  <footer class="wrap">
-    <p>© <span id="y"></span> Clutch</p>
+  <footer class="wrap footer">
+    <p>© <span id="y">2025</span> Clutch</p>
   </footer>
 
   <script>
-    // Year
-    document.getElementById("y").textContent = new Date().getFullYear();
-
-    // Subtle tilt on hover (no libs)
-    const tilts = document.querySelectorAll('.tilt');
-    const strength = 8;
-    tilts.forEach(el => {
-      el.addEventListener('mousemove', (e) => {
-        const r = el.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width - 0.5;
-        const y = (e.clientY - r.top) / r.height - 0.5;
-        el.style.transform = `rotateX(${(-y*strength)}deg) rotateY(${(x*strength)}deg) translateZ(0)`;
-      });
-      el.addEventListener('mouseleave', () => {
-        el.style.transform = '';
-      });
-    });
+    // Year (safe, tiny)
+    document.getElementById('y').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
