@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Clutch — Real-time AI Voice Coach for CS2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Clutch is a Windows app that listens for 'Hey Jarvis', reads CS2 GSI + screenshots, and speaks back instant tactical advice in real time." />
+
+  <!-- Open Graph / LinkedIn -->
+  <meta property="og:title" content="Clutch — Real-time AI Voice Coach for CS2" />
+  <meta property="og:description" content="Wake word + STT → CS2 GSI + screenshots → LLM → instant TTS. Sub-second 'first audio' coaching." />
+  <meta property="og:image" content="https://hoangtu0701.github.io/clutch/assets/social-card.png" />
+  <meta property="og:url" content="https://hoangtu0701.github.io/clutch/" />
+  <meta property="og:type" content="website" />
+
+  <!-- Twitter card (also used by some scrapers) -->
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="./assets/clutch_logo.png" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="wrap">
+    <img class="logo" src="./assets/clutch_logo.png" alt="Clutch logo" />
+    <h1>Clutch</h1>
+    <p class="tagline">Real-time voice assistant & tactical AI coach for Counter-Strike 2</p>
+    <div class="cta-row">
+      <a class="btn primary" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn" href="#demo">Watch Demo</a>
+      <a class="btn" href="#features">Features</a>
+    </div>
+  </header>
+
+  <main>
+    <section id="about" class="wrap">
+      <h2>What it does</h2>
+      <p>
+        Clutch listens for <b>“Hey Jarvis”</b>, transcribes your voice in real time, reads CS2
+        <b>Game State Integration (GSI)</b> + targeted screenshots, reasons with an LLM, and
+        streams back spoken advice via low-latency TTS (Google Chirp 3 HD / Coqui XTTS / Piper).
+      </p>
+      <ul class="bullets">
+        <li>Sub-second “first audio” with streaming pipeline</li>
+        <li>Wake-word + VAD + STT using RealtimeSTT/Whisper + Silero</li>
+        <li>Local Flask GSI server + multi-region screen capture (OpenCV)</li>
+        <li>OpenAI Responses API with OpenRouter fallback</li>
+        <li>PyQt5 desktop UI, thread-safe queues/locks, optional CUDA</li>
+      </ul>
+    </section>
+
+    <section id="demo" class="wrap">
+      <h2>Demo</h2>
+      <!-- Replace this with your YouTube link if available -->
+      <video controls width="100%" poster="./assets/social-card.png">
+        <source src="https://github.com/user-attachments/assets/c0977d21-d7a4-49e0-9168-cdaa2423d8c9" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </section>
+
+    <section id="features" class="wrap">
+      <h2>Key Features</h2>
+      <div class="grid">
+        <div class="card"><h3>Wake word</h3><p>“Hey Jarvis” via OpenWakeWord + Silero VAD.</p></div>
+        <div class="card"><h3>Real-time STT</h3><p>Streaming transcription with fast partials.</p></div>
+        <div class="card"><h3>Context Awareness</h3><p>CS2 GSI + multi-image capture for radar & alive counts.</p></div>
+        <div class="card"><h3>LLM Reasoning</h3><p>OpenAI Responses API (GPT-5) with OpenRouter fallback.</p></div>
+        <div class="card"><h3>Instant TTS</h3><p>Google Chirp 3 HD / Coqui XTTS / Piper with chunked playback.</p></div>
+        <div class="card"><h3>Windows App</h3><p>PyQt5 UI, embedded Python option, portable build script.</p></div>
+      </div>
+    </section>
+
+    <section id="links" class="wrap">
+      <h2>Links</h2>
+      <p>
+        <a href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">GitHub Repository</a>
+      </p>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p>© <span id="y"></span> Clutch</p>
+  </footer>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
