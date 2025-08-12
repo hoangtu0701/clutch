@@ -4,76 +4,169 @@
   <meta charset="utf-8" />
   <title>Clutch — Real-time AI Voice Coach for CS2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Clutch is a Windows app that listens for 'Hey Jarvis', reads CS2 GSI + screenshots, and speaks back instant tactical advice in real time." />
+  <meta name="description" content="Say 'Hey Jarvis' and get instant, voice-first CS2 coaching. Clutch reads GSI + screenshots, reasons with LLMs, and speaks back in real time." />
 
-  <!-- Open Graph / LinkedIn -->
+  <!-- Open Graph -->
   <meta property="og:title" content="Clutch — Real-time AI Voice Coach for CS2" />
-  <meta property="og:description" content="Wake word + STT → CS2 GSI + screenshots → LLM → instant TTS. Sub-second 'first audio' coaching." />
+  <meta property="og:description" content="Wake word → STT → GSI + screenshots → LLM → instant TTS. Sub-second 'first audio' coaching." />
   <meta property="og:image" content="https://hoangtu0701.github.io/clutch/assets/social-card.png" />
   <meta property="og:url" content="https://hoangtu0701.github.io/clutch/" />
   <meta property="og:type" content="website" />
-
-  <!-- Twitter card (also used by some scrapers) -->
   <meta name="twitter:card" content="summary_large_image" />
 
-  <link rel="icon" href="./assets/clutch_logo.png" />
+  <link rel="icon" href="./clutch_logo.png" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <header class="wrap">
-    <img class="logo" src="./assets/clutch_logo.png" alt="Clutch logo" />
-    <h1>Clutch</h1>
+  <!-- Background FX (black & white orbs + wave) -->
+  <div class="fx">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <svg class="wave" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,224L48,197.3C96,171,192,117,288,90.7C384,64,480,64,576,96C672,128,768,192,864,208C960,224,1056,192,1152,160C1248,128,1344,96,1392,80L1440,64L1440,0L0,0Z"></path>
+    </svg>
+  </div>
+
+  <header class="wrap hero">
+    <img class="logo" src="./clutch_logo.png" alt="Clutch logo" />
+    <h1 class="shine">CLUTCH</h1>
     <p class="tagline">Real-time voice assistant & tactical AI coach for Counter-Strike 2</p>
     <div class="cta-row">
       <a class="btn primary" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">View on GitHub</a>
-      <a class="btn" href="#demo">Watch Demo</a>
       <a class="btn" href="#features">Features</a>
+      <a class="btn" href="#how">How it works</a>
     </div>
+    <p class="keys-hint">Setup lives on GitHub. You’ll use your own API keys — see README.</p>
   </header>
 
+  <!-- Marquee ticker -->
+  <section class="ticker" aria-label="Highlights">
+    <div class="track">
+      <span>“Hey Jarvis” Wake Word</span>
+      <span>Realtime STT</span>
+      <span>CS2 GSI + Screenshots</span>
+      <span>Streaming LLM (OpenAI / OpenRouter)</span>
+      <span>Instant TTS (Google / Piper / Coqui)</span>
+      <span>Interrupt Anytime</span>
+      <span>Bomb & Round Timer</span>
+      <span>Clean Windows App UI</span>
+    </div>
+  </section>
+
   <main>
-    <section id="about" class="wrap">
-      <h2>What it does</h2>
-      <p>
-        Clutch listens for <b>“Hey Jarvis”</b>, transcribes your voice in real time, reads CS2
-        <b>Game State Integration (GSI)</b> + targeted screenshots, reasons with an LLM, and
-        streams back spoken advice via low-latency TTS (Google Chirp 3 HD / Coqui XTTS / Piper).
-      </p>
-      <ul class="bullets">
-        <li>Sub-second “first audio” with streaming pipeline</li>
-        <li>Wake-word + VAD + STT using RealtimeSTT/Whisper + Silero</li>
-        <li>Local Flask GSI server + multi-region screen capture (OpenCV)</li>
-        <li>OpenAI Responses API with OpenRouter fallback</li>
-        <li>PyQt5 desktop UI, thread-safe queues/locks, optional CUDA</li>
-      </ul>
-    </section>
-
-    <section id="demo" class="wrap">
-      <h2>Demo</h2>
-      <!-- Replace this with your YouTube link if available -->
-      <video controls width="100%" poster="./assets/social-card.png">
-        <source src="https://github.com/user-attachments/assets/c0977d21-d7a4-49e0-9168-cdaa2423d8c9" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-    </section>
-
-    <section id="features" class="wrap">
-      <h2>Key Features</h2>
-      <div class="grid">
-        <div class="card"><h3>Wake word</h3><p>“Hey Jarvis” via OpenWakeWord + Silero VAD.</p></div>
-        <div class="card"><h3>Real-time STT</h3><p>Streaming transcription with fast partials.</p></div>
-        <div class="card"><h3>Context Awareness</h3><p>CS2 GSI + multi-image capture for radar & alive counts.</p></div>
-        <div class="card"><h3>LLM Reasoning</h3><p>OpenAI Responses API (GPT-5) with OpenRouter fallback.</p></div>
-        <div class="card"><h3>Instant TTS</h3><p>Google Chirp 3 HD / Coqui XTTS / Piper with chunked playback.</p></div>
-        <div class="card"><h3>Windows App</h3><p>PyQt5 UI, embedded Python option, portable build script.</p></div>
+    <!-- Why section -->
+    <section id="why" class="wrap">
+      <h2>Why players love Clutch</h2>
+      <div class="grid cards">
+        <article class="card tilt">
+          <h3>Instant voice feedback</h3>
+          <p>Sub-second “first audio” using a streaming pipeline from model tokens straight to TTS.</p>
+        </article>
+        <article class="card tilt">
+          <h3>Real CS2 context</h3>
+          <p>Combines <b>GSI</b> with targeted screenshots (radar + alive counts) to ground advice.</p>
+        </article>
+        <article class="card tilt">
+          <h3>Always interruptible</h3>
+          <p>Say <b>“Hey Jarvis”</b> mid-sentence to cut TTS and ask again — no waiting.</p>
+        </article>
+        <article class="card tilt">
+          <h3>Voice that keeps up</h3>
+          <p>Google Chirp 3 HD streaming when available, with automatic Piper/Coqui fallback.</p>
+        </article>
+        <article class="card tilt">
+          <h3>In-round timer badge</h3>
+          <p>Freeze → Live → Bomb plant → Round end — the timer adapts so your calls do too.</p>
+        </article>
+        <article class="card tilt">
+          <h3>Built for Windows</h3>
+          <p>PyQt UI with smooth badges and a tidy setup that just works.</p>
+        </article>
       </div>
     </section>
 
-    <section id="links" class="wrap">
-      <h2>Links</h2>
-      <p>
-        <a href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">GitHub Repository</a>
-      </p>
+    <!-- How it works -->
+    <section id="how" class="wrap">
+      <h2>How it works</h2>
+      <ol class="pipeline">
+        <li class="tilt">
+          <span class="step">1</span>
+          <h4>Wake</h4>
+          <p>Say “Hey Jarvis”. OpenWakeWord + Silero VAD starts listening.</p>
+        </li>
+        <li class="tilt">
+          <span class="step">2</span>
+          <h4>Hear</h4>
+          <p>Realtime STT streams partials for responsiveness.</p>
+        </li>
+        <li class="tilt">
+          <span class="step">3</span>
+          <h4>See</h4>
+          <p>Clutch reads CS2 GSI + captures targeted UI regions (radar, alive counters).</p>
+        </li>
+        <li class="tilt">
+          <span class="step">4</span>
+          <h4>Think</h4>
+          <p>LLM (OpenAI via Responses API, with OpenRouter fallback) reasons in context.</p>
+        </li>
+        <li class="tilt">
+          <span class="step">5</span>
+          <h4>Speak</h4>
+          <p>Streaming TTS speaks tokens ASAP. Interrupt any time with “Hey Jarvis”.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Features (marketing phrasing) -->
+    <section id="features" class="wrap">
+      <h2>Key features</h2>
+      <div class="grid features">
+        <div class="feat">
+          <h3>Wake word</h3>
+          <p>“Hey Jarvis” with safe debounce and late-wake protection.</p>
+        </div>
+        <div class="feat">
+          <h3>Realtime STT</h3>
+          <p>Fast partials, smart sentence detection.</p>
+        </div>
+        <div class="feat">
+          <h3>Context aware</h3>
+          <p>GSI snapshot + multi-image capture to anchor calls to reality.</p>
+        </div>
+        <div class="feat">
+          <h3>LLM streaming</h3>
+          <p>GPT-5 Responses API with graceful OpenRouter fallback.</p>
+        </div>
+        <div class="feat">
+          <h3>Instant TTS</h3>
+          <p>Google Chirp 3 HD when present; Piper/Coqui otherwise — chosen automatically.</p>
+        </div>
+        <div class="feat">
+          <h3>Windows UI</h3>
+          <p>Clean PyQt interface with TTS and timer badges.</p>
+        </div>
+      </div>
+
+      <details class="tech">
+        <summary>Under the hood (for nerds)</summary>
+        <ul>
+          <li>Local Flask GSI server + OpenCV region grabs</li>
+          <li>Token normalization & pause heuristics for natural speech</li>
+          <li>Thread-safe audio streams with immediate stop/clear on interrupt</li>
+          <li>Secret keys folder for simple local config</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- CTA -->
+    <section id="cta" class="wrap cta-final">
+      <h2>Get Clutch</h2>
+      <p>No downloads here — grab it on GitHub and follow the README. You’ll use your own API keys.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">Open GitHub</a>
+        <a class="btn" href="https://github.com/hoangtu0701/clutch#-setup-instructions-windows-only" target="_blank" rel="noopener">Read the README</a>
+      </div>
     </section>
   </main>
 
@@ -82,7 +175,23 @@
   </footer>
 
   <script>
+    // Year
     document.getElementById("y").textContent = new Date().getFullYear();
+
+    // Subtle tilt on hover (no libs)
+    const tilts = document.querySelectorAll('.tilt');
+    const strength = 8;
+    tilts.forEach(el => {
+      el.addEventListener('mousemove', (e) => {
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - 0.5;
+        const y = (e.clientY - r.top) / r.height - 0.5;
+        el.style.transform = `rotateX(${(-y*strength)}deg) rotateY(${(x*strength)}deg) translateZ(0)`;
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = '';
+      });
+    });
   </script>
 </body>
 </html>
