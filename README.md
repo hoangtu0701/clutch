@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/c0977d21-d7a4-49e0-9168-cdaa2423d8c9
 - ⏱ **In-round timer badge** with auto-detection for freezetime, live, bomb plant, and round end
 - 🖼️ **Multi-region screen capture** (radar + alive counters) to boost tactical precision
 - 🪟 **Desktop UI** (PyQt) with live badges for TTS engine and round timer
-- 🗂️ **Secret keys folder** (no more `.env`) for simple, portable configuration
+- 🗂️ **Secret keys folder** for simple, portable configuration
 - 🛠️ **Auto GSI setup**: copies `gamestate_integration_clutch.cfg` to your CS2 `cfg` folder if missing
 
 ---
