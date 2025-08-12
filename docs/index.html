@@ -6,20 +6,194 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Say 'Hey Jarvis' and get instant voice-first CS2 coaching. Clutch reads GSI + screenshots, reasons with LLMs, and speaks back in real time." />
   <link rel="icon" href="./assets/clutch_logo.png" />
-  <link rel="stylesheet" href="./style.css" />
+  <meta property="og:title" content="Clutch — Real-time AI Voice Coach for CS2">
+  <meta property="og:description" content="Wake word → STT → GSI + screenshots → LLM → instant TTS. Interrupt anytime.">
+  <meta property="og:image" content="./assets/clutch_logo.png">
+  <meta name="theme-color" content="#0b0b0c">
+  <style>
+    /* =======================
+       ULTRA MODERN B/W THEME
+       ======================= */
+    :root{
+      --bg: #0b0b0c;        /* onyx */
+      --ink: #ffffff;       /* white */
+      --muted:#cfcfd4;      /* cool gray */
+      --line:#1a1a1d;       /* hairline */
+      --card:#111214;       /* deep card */
+      --card-2:#0e0f10;     /* deeper card */
+      --glow:#f4f4f7;       /* subtle white for glows */
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    img{max-width:100%;display:block}
+    a{color:inherit;text-decoration:none}
+
+    /* ===== Animated background (lightweight, wavy, no libs) ===== */
+    .bg{
+      position:fixed; inset:0; z-index:-3; pointer-events:none;
+      background:
+        radial-gradient(52vw 52vw at 10% -10%, rgba(255,255,255,.08), transparent 60%),
+        radial-gradient(48vw 48vw at 110% 10%, rgba(255,255,255,.05), transparent 60%),
+        linear-gradient(#0b0b0c,#0b0b0c);
+      mix-blend-mode:normal;
+    }
+    .grid{
+      position:fixed; inset:0; z-index:-2; pointer-events:none; opacity:.22;
+      background:
+        radial-gradient(90vmax 90vmax at 50% -10%, rgba(255,255,255,.06), transparent 70%) no-repeat,
+        repeating-linear-gradient(0deg, transparent 0 29px, rgba(255,255,255,.06) 29px 30px),
+        repeating-linear-gradient(90deg, transparent 0 29px, rgba(255,255,255,.06) 29px 30px);
+      mask: radial-gradient(120vmax 60vmax at 50% -20%, #000 25%, transparent 70%);
+    }
+    /* Organic wave via SVG filter */
+    .noise{
+      position:fixed; inset:-10vmax; z-index:-1; pointer-events:none; opacity:.7; filter:contrast(110%) brightness(110%);
+      background: radial-gradient(60vmax 60vmax at 20% 0%, rgba(255,255,255,.06), transparent 60%),
+                  radial-gradient(40vmax 40vmax at 80% 10%, rgba(255,255,255,.04), transparent 60%);
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    @keyframes drift{ from{transform:translateY(0)} to{transform:translateY(-16px)} }
+    /* mouse spotlight */
+    .spot{
+      position:fixed; inset:0; z-index:-1; pointer-events:none;
+      background: radial-gradient(240px 240px at var(--mx,50%) var(--my,40%), rgba(255,255,255,.08), transparent 60%);
+      transition: background 120ms linear;
+    }
+    @media (prefers-reduced-motion: reduce){
+      .noise, .bg{animation:none}
+    }
+
+    /* ===== Top nav ===== */
+    .nav{
+      position:sticky; top:0; z-index:20;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 18px; border-bottom:1px solid var(--line);
+      background:rgba(10,10,11,.55); backdrop-filter:saturate(120%) blur(8px);
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:900; letter-spacing:.6px}
+    .brand img{width:28px; height:28px; border-radius:6px; filter:drop-shadow(0 4px 16px rgba(0,0,0,.5))}
+    .nav-links{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .nav-links a{padding:8px 10px; border-radius:10px; color:#eaeaea}
+    .nav-links a:hover{background:#141416}
+    .nav-links .cta{border:1px solid var(--line); padding:8px 12px; background:#0f0f11; font-weight:800}
+
+    /* ===== Layout container ===== */
+    .wrap{max-width:1120px; margin:0 auto; padding:32px 16px}
+
+    /* ===== Hero ===== */
+    .hero{
+      padding:72px 16px 24px; text-align:center; position:relative; isolation:isolate;
+    }
+    .hero .logo{
+      width:92px; height:92px; margin:0 auto 14px; border-radius:20px;
+      box-shadow: 0 12px 36px rgba(0,0,0,.55);
+    }
+    h1{margin:0 0 8px; font-size:46px; line-height:1.06; letter-spacing:.3px; font-weight:900}
+    .tagline{max-width:820px; margin:0 auto 18px; color:var(--muted)}
+    .badges{
+      display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin:14px 0 6px;
+    }
+    .pill{
+      border:1px solid var(--line); background:linear-gradient(180deg,#0e0e10,#0b0b0c);
+      padding:8px 12px; border-radius:999px; font-weight:700; color:#eaeaea; opacity:.9;
+    }
+    .cta-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:14px 0 6px}
+    .btn{
+      padding:11px 16px; border-radius:14px; border:1px solid var(--line);
+      background:var(--card-2); font-weight:800; color:#fff; transform:translateZ(0);
+      transition: transform .15s ease, box-shadow .15s ease, background .2s ease;
+      will-change: transform;
+    }
+    .btn.primary{background:linear-gradient(135deg,#0e0e11,#151519)}
+    .btn:hover{transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,0,0,.45)}
+    .keys-hint{font-size:13px; opacity:.78; margin-top:6px}
+
+    /* ===== Sections ===== */
+    section h2{
+      font-size:24px; letter-spacing:.6px; margin:4px 0 10px; text-transform:uppercase;
+      color:#f1f1f1; opacity:.9
+    }
+
+    /* ===== Feature cards (tilt + reveal) ===== */
+    .cards{
+      display:grid; gap:14px; margin-top:8px;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    }
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px;
+      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      transform-style:preserve-3d;
+    }
+    .card h3{margin:0 0 6px}
+    .card p{margin:0; color:var(--muted)}
+    .card:hover{transform:translateY(-3px) rotateX(1deg) rotateY(-1deg); border-color:#242428; box-shadow:0 14px 40px rgba(0,0,0,.45)}
+    .card .dot{
+      width:8px; height:8px; border-radius:50%; background:#fff; display:inline-block; margin-right:8px; opacity:.9
+    }
+
+    /* ===== Feature list ===== */
+    .feature-list{
+      list-style:none; padding:0; margin:10px 0 0;
+      display:grid; gap:10px;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    }
+    .feature-list li{
+      border:1px dashed var(--line); border-radius:14px; padding:12px; background:#0f0f11;
+      display:flex; align-items:center; min-height:56px; justify-content:flex-start; gap:10px;
+    }
+    .feature-list .tick{width:16px; height:16px; border-radius:4px; border:1px solid #2a2a2e; background:#121214; display:grid; place-items:center; font-size:12px}
+    .feature-list span{color:#e9e9e9}
+
+    /* ===== Steps ===== */
+    .steps{
+      list-style:none; padding:0; margin:10px 0 0;
+      display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    }
+    .steps li{
+      position:relative; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px;
+    }
+    .steps .num{
+      position:absolute; top:10px; right:10px; width:26px; height:26px; display:grid; place-items:center;
+      border:1px solid var(--line); border-radius:50%; font-weight:800; color:#dcdce2; background:#0e0e10
+    }
+    .steps h4{margin:2px 0 6px}
+    .steps p{margin:0; color:var(--muted)}
+
+    /* ===== Section note / CTA ===== */
+    .note{
+      margin-top:12px; padding:12px; border:1px solid var(--line); border-radius:12px;
+      background:#0e0f10; color:#ddd; text-align:center
+    }
+    .cta{text-align:center}
+
+    /* ===== Footer ===== */
+    .footer{color:#bdbdc4; text-align:center}
+
+    /* ===== Scroll reveal ===== */
+    .reveal{opacity:0; transform:translateY(12px); transition:opacity .5s ease, transform .5s ease}
+    .reveal.show{opacity:1; transform:none}
+
+    /* ===== Mobile ===== */
+    @media (max-width:540px){
+      h1{font-size:36px}
+      .hero .logo{width:80px; height:80px}
+    }
+  </style>
 </head>
 <body>
-  <!-- Minimal, resilient, gorgeous B/W layout with zero external deps -->
-
-  <!-- Decorative background (CSS-only in style.css) -->
+  <!-- Layers -->
   <div class="bg"></div>
+  <div class="grid" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="spot" aria-hidden="true"></div>
 
+  <!-- NAV -->
   <header class="nav">
-    <a class="brand" href="#top">
-      <img src="./assets/clutch_logo.png" alt="Clutch logo" />
-      <span>Clutch</span>
+    <a class="brand" href="#top" aria-label="Clutch">
+      <!-- the one and only logo (no banner) -->
+      <img src="./assets/clutch_logo.png" alt="Clutch logo">
     </a>
-    <nav>
+    <nav class="nav-links">
       <a href="#why">Why</a>
       <a href="#features">Features</a>
       <a href="#how">How it works</a>
@@ -29,77 +203,86 @@
 
   <main id="top">
     <!-- HERO -->
-    <section class="hero">
-      <img class="hero-logo" src="./assets/clutch_logo.png" alt="Clutch logo" />
+    <section class="hero wrap reveal">
+      <img class="logo" src="./assets/clutch_logo.png" alt="Clutch logo">
       <h1>Real-time AI Voice Coach for CS2</h1>
       <p class="tagline">
-        Wake word → STT → GSI + screenshots → LLM → instant TTS.<br />
-        Ask, interrupt, and get round-winning calls in real time.
+        Wake word → STT → GSI + radar snapshots → LLM → <strong>instant TTS</strong>. <br/>
+        Ask naturally, <em>interrupt anytime</em>, and get round-winning calls in the moment.
       </p>
-      <div class="hero-ctas">
-        <a class="btn primary" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">View on GitHub</a>
-        <a class="btn" href="https://github.com/hoangtu0701/clutch#-setup-instructions-windows-only" target="_blank" rel="noopener">Read the README</a>
+
+      <!-- crisp value props -->
+      <div class="badges">
+        <span class="pill">Say “Hey Jarvis”</span>
+        <span class="pill">Sub-second first audio*</span>
+        <span class="pill">Grounded by GSI + screenshots</span>
+        <span class="pill">Google → Piper/Coqui fallback</span>
+        <span class="pill">Windows desktop UI</span>
       </div>
-      <p class="keys-hint">Setup is on GitHub. You’ll use your own API keys.</p>
+
+      <div class="cta-row">
+        <a class="btn primary magnet" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">Open GitHub</a>
+        <a class="btn magnet" href="https://github.com/hoangtu0701/clutch#-setup-instructions-windows-only" target="_blank" rel="noopener">Read the README</a>
+      </div>
+      <p class="keys-hint">Install guide lives on GitHub. You’ll use your own API keys.</p>
+      <p class="keys-hint" style="opacity:.55;font-size:12px;margin-top:4px">*First audio depends on your hardware/network.</p>
     </section>
 
     <!-- WHY -->
-    <section id="why" class="wrap">
+    <section id="why" class="wrap reveal">
       <h2>Why Clutch</h2>
       <div class="cards">
-        <article class="card">
-          <h3>Instant voice feedback</h3>
-          <p>Streaming pipeline speaks the first tokens ASAP for sub-second “first audio”.</p>
+        <article class="card tilt">
+          <h3><span class="dot"></span>Instant voice feedback</h3>
+          <p>Streaming pipeline speaks the earliest tokens ASAP for a “go-now” feel.</p>
         </article>
-        <article class="card">
-          <h3>Grounded in CS2</h3>
-          <p>Combines <strong>GSI</strong> with targeted screenshots (radar + alive counts) to ground advice.</p>
+        <article class="card tilt">
+          <h3><span class="dot"></span>Grounded in your match</h3>
+          <p>Combines <strong>CS2 GSI</strong> with targeted screenshots (radar + alive counts) for context-aware calls.</p>
         </article>
-        <article class="card">
-          <h3>Always interruptible</h3>
-          <p>Say <strong>“Hey Jarvis”</strong> mid-sentence to cut speech and ask again — no waiting.</p>
+        <article class="card tilt">
+          <h3><span class="dot"></span>Always interruptible</h3>
+          <p>Say <strong>“Hey Jarvis”</strong> mid-sentence to cut TTS and re-ask — no waiting.</p>
         </article>
-        <article class="card">
-          <h3>Voice that keeps up</h3>
-          <p>Google Chirp 3 HD when available, with automatic Piper/Coqui fallback.</p>
+        <article class="card tilt">
+          <h3><span class="dot"></span>Voice that keeps up</h3>
+          <p>Uses <strong>Google Chirp 3 HD</strong> when available, with automatic <strong>Piper</strong>/<strong>Coqui</strong> fallback chosen by VRAM.</p>
         </article>
-        <article class="card">
-          <h3>Round-aware timing</h3>
-          <p>Freeze → Live → Bomb plant → Round end — timer badge keeps calls in rhythm.</p>
+        <article class="card tilt">
+          <h3><span class="dot"></span>Round-aware timing</h3>
+          <p>Freeze → Live → Bomb plant → Round end — a local badge tracks time so advice stays in rhythm.</p>
         </article>
-        <article class="card">
-          <h3>Built for Windows</h3>
-          <p>Clean PyQt UI, smooth badges, and a tidy local setup.</p>
+        <article class="card tilt">
+          <h3><span class="dot"></span>Built for Windows</h3>
+          <p>Clean PyQt desktop UI with live badges and tidy secret-keys setup.</p>
         </article>
       </div>
     </section>
 
     <!-- FEATURES -->
-    <section id="features" class="wrap">
+    <section id="features" class="wrap reveal">
       <h2>Key features</h2>
       <ul class="feature-list">
-        <li><span>“Hey Jarvis” wake word</span></li>
-        <li><span>Realtime STT with partials</span></li>
-        <li><span>CS2 GSI + multi-region screenshots</span></li>
-        <li><span>LLM streaming (OpenAI with OpenRouter fallback)</span></li>
-        <li><span>Instant TTS (Google / Piper / Coqui)</span></li>
-        <li><span>Immediate speech stop on interrupt</span></li>
-        <li><span>Bomb & round timers</span></li>
-        <li><span>Windows desktop UI (PyQt)</span></li>
+        <li><span class="tick">✓</span><span>“Hey Jarvis” wake word (OpenWakeWord + VAD)</span></li>
+        <li><span class="tick">✓</span><span>Realtime STT with partials</span></li>
+        <li><span class="tick">✓</span><span>CS2 GSI + multi-region screenshots (radar + alive counters)</span></li>
+        <li><span class="tick">✓</span><span>LLM streaming brain (OpenAI Responses API)</span></li>
+        <li><span class="tick">✓</span><span>Instant TTS: Google / Piper / Coqui with smart fallback</span></li>
+        <li><span class="tick">✓</span><span>Immediate speech stop on interrupt (“Hey Jarvis” again)</span></li>
+        <li><span class="tick">✓</span><span>Bomb & round timers (local, resilient)</span></li>
+        <li><span class="tick">✓</span><span>Windows desktop UI (PyQt)</span></li>
       </ul>
-      <div class="note">
-        No downloads here — grab it on GitHub and follow the README. You’ll need your own keys.
-      </div>
+      <div class="note">No downloads here — grab Clutch on GitHub and follow the README. You’ll need your own keys.</div>
     </section>
 
     <!-- HOW IT WORKS -->
-    <section id="how" class="wrap">
+    <section id="how" class="wrap reveal">
       <h2>How it works</h2>
       <ol class="steps">
         <li>
           <span class="num">1</span>
           <h4>Wake</h4>
-          <p>Say “Hey Jarvis”. OpenWakeWord + VAD starts the capture.</p>
+          <p>Say “Hey Jarvis”. Wakeword + VAD starts listening.</p>
         </li>
         <li>
           <span class="num">2</span>
@@ -109,12 +292,12 @@
         <li>
           <span class="num">3</span>
           <h4>See</h4>
-          <p>GSI + targeted screenshots (radar, alive counts) anchor the advice.</p>
+          <p>GSI + targeted screenshots (radar &amp; alive counters) ground the plan.</p>
         </li>
         <li>
           <span class="num">4</span>
           <h4>Think</h4>
-          <p>LLM (OpenAI Responses API with OpenRouter fallback) reasons in context.</p>
+          <p>OpenAI model reasons in context for concise, usable calls.</p>
         </li>
         <li>
           <span class="num">5</span>
@@ -125,12 +308,12 @@
     </section>
 
     <!-- CTA -->
-    <section class="wrap cta">
+    <section class="wrap cta reveal">
       <h2>Get Clutch</h2>
       <p>No demo or downloads here — head to GitHub for the install manual.</p>
-      <div class="hero-ctas">
-        <a class="btn primary" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">Open GitHub</a>
-        <a class="btn" href="https://github.com/hoangtu0701/clutch#-setup-instructions-windows-only" target="_blank" rel="noopener">Read the README</a>
+      <div class="cta-row">
+        <a class="btn primary magnet" href="https://github.com/hoangtu0701/clutch" target="_blank" rel="noopener">Open GitHub</a>
+        <a class="btn magnet" href="https://github.com/hoangtu0701/clutch#-setup-instructions-windows-only" target="_blank" rel="noopener">Read the README</a>
       </div>
       <p class="keys-hint">Reminder: you’ll use your own API keys.</p>
     </section>
@@ -140,9 +323,61 @@
     <p>© <span id="y">2025</span> Clutch</p>
   </footer>
 
+  <!-- Tiny, dependency-free effects inspired by lightweight landing pages -->
+  <svg width="0" height="0" style="position:absolute">
+    <filter id="wavy">
+      <feTurbulence baseFrequency="0.004" numOctaves="2" seed="3" type="fractalNoise">
+        <animate attributeName="baseFrequency" dur="16s" values="0.004;0.006;0.004" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
   <script>
-    // Year (safe, tiny)
+    // Year
     document.getElementById('y').textContent = new Date().getFullYear();
+
+    // Scroll reveal
+    const io = ('IntersectionObserver' in window) ? new IntersectionObserver((entries)=>{
+      for(const e of entries){ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target); } }
+    }, {threshold:.12}) : null;
+    document.querySelectorAll('.reveal').forEach(el => io ? io.observe(el) : el.classList.add('show'));
+
+    // Magnetic buttons (gentle)
+    const mags = document.querySelectorAll('.magnet');
+    mags.forEach(btn=>{
+      btn.addEventListener('mousemove', e=>{
+        const r = btn.getBoundingClientRect();
+        const mx = e.clientX - (r.left + r.width/2);
+        const my = e.clientY - (r.top + r.height/2);
+        btn.style.transform = `translate(${mx*0.06}px, ${my*0.06}px)`;
+      });
+      btn.addEventListener('mouseleave', ()=>{ btn.style.transform = 'translate(0,0)'; });
+    });
+
+    // Tilt cards
+    const tilts = document.querySelectorAll('.tilt');
+    tilts.forEach(card=>{
+      card.addEventListener('mousemove', (e)=>{
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - .5;
+        const y = (e.clientY - r.top) / r.height - .5;
+        card.style.transform = `rotateX(${(-y*4)}deg) rotateY(${(x*4)}deg) translateY(-2px)`;
+      });
+      card.addEventListener('mouseleave', ()=>{ card.style.transform = ''; });
+    });
+
+    // Mouse spotlight
+    const spot = document.querySelector('.spot');
+    window.addEventListener('pointermove', (e)=>{
+      const x = e.clientX, y = e.clientY;
+      spot.style.setProperty('--mx', x+'px');
+      spot.style.setProperty('--my', y+'px');
+    }, {passive:true});
+
+    // Apply subtle wavy filter to hero + cards for a living UI feel
+    const wavify = (els)=> els.forEach(el=> el.style.filter = 'url(#wavy)');
+    wavify([document.querySelector('.hero')]);
   </script>
 </body>
 </html>
