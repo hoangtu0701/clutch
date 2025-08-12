@@ -7,7 +7,6 @@
   <meta name="description" content="Say 'Hey Jarvis' and get instant voice-first CS2 coaching. Clutch reads GSI + screenshots, reasons with LLMs, and speaks back in real time." />
   <link rel="icon" href="./assets/clutch_logo.png" />
   <meta property="og:title" content="Clutch — Real-time AI Voice Coach for CS2">
-  <meta property="og:description" content="Wake word → STT → GSI + screenshots → LLM → instant TTS. Interrupt anytime.">
   <meta property="og:image" content="./assets/clutch_logo.png">
   <meta name="theme-color" content="#0b0b0c">
   <style>
@@ -27,26 +26,12 @@
 
     .bg{
       position:fixed; inset:0; z-index:-3; pointer-events:none;
-      background:
-        radial-gradient(52vw 52vw at 10% -10%, rgba(255,255,255,.08), transparent 60%),
-        radial-gradient(48vw 48vw at 110% 10%, rgba(255,255,255,.05), transparent 60%),
-        linear-gradient(#0b0b0c,#0b0b0c);
+      background:var(--bg);
       mix-blend-mode:normal;
     }
-    .grid{
-      position:fixed; inset:0; z-index:-2; pointer-events:none; opacity:.22;
-      background:
-        radial-gradient(90vmax 90vmax at 50% -10%, rgba(255,255,255,.06), transparent 70%) no-repeat,
-        repeating-linear-gradient(0deg, transparent 0 29px, rgba(255,255,255,.06) 29px 30px),
-        repeating-linear-gradient(90deg, transparent 0 29px, rgba(255,255,255,.06) 29px 30px);
-      mask: radial-gradient(120vmax 60vmax at 50% -20%, #000 25%, transparent 70%);
-    }
-    .noise{
-      position:fixed; inset:-10vmax; z-index:-1; pointer-events:none; opacity:.7; filter:contrast(110%) brightness(110%);
-      background: radial-gradient(60vmax 60vmax at 20% 0%, rgba(255,255,255,.06), transparent 60%),
-                  radial-gradient(40vmax 40vmax at 80% 10%, rgba(255,255,255,.04), transparent 60%);
-      animation: drift 20s ease-in-out infinite alternate;
-    }
+    .grid{display:none}
+    .noise{display:none}
+
     @keyframes drift{ from{transform:translateY(0)} to{transform:translateY(-20px)} }
 
     .spot{
@@ -70,7 +55,7 @@
       text-shadow:0 0 8px var(--glow);
     }
     @media (prefers-reduced-motion: reduce){
-      .noise, .bg{animation:none}
+      .bg{animation:none}
     }
 
     .nav{
@@ -181,7 +166,7 @@
       .hero .logo{width:80px; height:80px}
     }
 
-    #why{padding-bottom:120px}
+    #why{padding-bottom:120px; overflow:hidden}
   </style>
 </head>
 <body>
@@ -204,7 +189,6 @@
       <img class="logo" src="./assets/clutch_logo.png" alt="Clutch logo">
       <h1 class="glow-title">Real-time AI Voice Coach for CS2</h1>
       <p class="tagline">
-        Wake word → STT → GSI + radar snapshots → LLM → <strong>instant TTS</strong>. <br/>
         Ask naturally, <em>interrupt anytime</em>, and get round-winning calls in the moment.
       </p>
       <div class="badges">
@@ -261,7 +245,7 @@
         <li><span class="tick">✓</span><span>Immediate speech stop on interrupt (“Hey Jarvis” again)</span></li>
         <li><span class="tick">✓</span><span>Bomb & round timers (local, resilient)</span></li>
         <li><span class="tick">✓</span><span>Windows desktop UI (PyQt)</span></li>
-        <li><span class="tick">✓</span><span>Regular upcoming feature updates</span></li>
+        <li><span class="tick">✓</span><span>MIT open-source license</span></li>
       </ul>
     </section>
 
