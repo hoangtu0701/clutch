@@ -28,6 +28,7 @@ from google.cloud import texttospeech
 from google.oauth2 import service_account
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QScrollArea, QGraphicsDropShadowEffect
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
+from PyQt5.QtGui import QIcon
 from RealtimeSTT import AudioToTextRecorder
 from RealtimeTTS import TextToAudioStream, CoquiEngine, PiperEngine, PiperVoice
 from flask import Flask, request
@@ -1180,6 +1181,9 @@ class STTWorker(QThread):
 class ClutchWindow(QWidget):
     def __init__(self):
         super().__init__()
+        logo_path = os.path.join(base_dir, "clutch_logo.png")
+        if os.path.exists(logo_path):
+            self.setWindowIcon(QIcon(logo_path))
         self.setVisible(False)
         self.setMinimumSize(960, 560)
         self.setStyleSheet("""
