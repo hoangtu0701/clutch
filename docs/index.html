@@ -51,7 +51,7 @@
 
     .spot{
       position:fixed; inset:0; z-index:50; pointer-events:none;
-      background: radial-gradient(320px 320px at var(--mx,50%) var(--my,40%), rgba(255,255,255,.15), transparent 70%);
+      background: radial-gradient(240px 240px at var(--mx,50%) var(--my,40%), rgba(255,255,255,.15), transparent 70%);
       mix-blend-mode:screen;
       transition: opacity 280ms ease, background 120ms linear;
       opacity:0;
@@ -78,7 +78,10 @@
       display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:24px;
       padding:14px 24px; border-bottom:1px solid var(--line);
       background:rgba(10,10,11,.55); backdrop-filter:saturate(120%) blur(8px);
+      transition:transform .26s ease, opacity .26s ease, background .25s ease, backdrop-filter .25s ease;
+      will-change:transform;
     }
+    .nav.hide{transform:translateY(-100%); opacity:0}
     .nav-links{display:flex; gap:18px; align-items:center; flex-wrap:wrap; justify-content:center}
     .nav-links a{padding:8px 14px; border-radius:10px; color:#e5e5e9}
     .nav-links a:hover{background:#141416}
@@ -103,6 +106,7 @@
       padding:8px 12px; border-radius:999px; font-weight:700; color:#fff; opacity:1;
     }
     .cta-row{display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin:18px 0 6px}
+    .hero .cta-row{margin-top:36px}
     .btn{
       padding:11px 16px; border-radius:14px; border:1px solid var(--line);
       background:var(--card-2); font-weight:800; color:#fff; transform:translateZ(0);
@@ -257,7 +261,7 @@
         <li><span class="tick">✓</span><span>Immediate speech stop on interrupt (“Hey Jarvis” again)</span></li>
         <li><span class="tick">✓</span><span>Bomb & round timers (local, resilient)</span></li>
         <li><span class="tick">✓</span><span>Windows desktop UI (PyQt)</span></li>
-        <li><span class="tick">✓</span><span>MIT open-source license</span></li>
+        <li><span class="tick">✓</span><span>Regular updates upcoming</span></li>
       </ul>
     </section>
 
@@ -389,6 +393,15 @@
 
     const wavify = (els)=> els.forEach(el=> el.style.filter = 'url(#wavy)');
     wavify([document.querySelector('.hero'), ...document.querySelectorAll('.card')]);
+
+    const nav = document.querySelector('.nav');
+    let lastY = window.scrollY;
+    window.addEventListener('scroll', ()=>{
+      const y = window.scrollY;
+      if (y > lastY + 4) nav.classList.add('hide');
+      else if (y < lastY - 4) nav.classList.remove('hide');
+      lastY = y;
+    }, {passive:true});
   </script>
 </body>
 </html>
