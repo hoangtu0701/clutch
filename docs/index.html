@@ -421,12 +421,26 @@
 
     const nav = document.querySelector('.nav');
     let lastY = window.scrollY;
-    window.addEventListener('scroll', ()=>{
-      const y = window.scrollY;
-      if (y < lastY) nav.classList.remove('hide');
-      else if (y > lastY) nav.classList.add('hide');
+    const TOP_LOCK = 2;  
+    const THRESH  = 6; 
+
+    window.addEventListener('scroll', () => {
+      const y  = window.scrollY;
+      const dy = y - lastY;
+
+      if (y <= TOP_LOCK) {
+        nav.classList.remove('hide');
+        lastY = y;
+        return;
+      }
+
+      if (Math.abs(dy) < THRESH) return;
+
+      if (dy < 0) nav.classList.remove('hide');
+      else        nav.classList.add('hide');
+
       lastY = y;
-    }, {passive:true});
+    }, { passive: true });
   </script>
 </body>
 </html>
