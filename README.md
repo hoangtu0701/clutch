@@ -8,7 +8,7 @@ It listens to your voice, analyzes your game state (via GSI + screenshots), and 
 
 ## 🎥 Demo
 
-https://github.com/user-attachments/assets/c0977d21-d7a4-49e0-9168-cdaa2423d8c9
+https://github.com/user-attachments/assets/7fa2e61a-6d0f-43a6-953a-538031a7e551
 
 ---
 
