@@ -180,9 +180,9 @@
     @media (max-width: 768px), (hover: none), (pointer: coarse) {
       .spot { display: none !important; }
     }
-    
+
     @media (max-width: 768px), (hover: none) and (pointer: coarse) {
-      .tagline { margin: 0 auto 90px; }
+      .tagline { margin: 0 auto 80px; }
     }
 
     @media (max-width: 768px) {
@@ -343,9 +343,9 @@
 
     <filter id="wavy-mobile">
       <feTurbulence baseFrequency="0.0045" numOctaves="1" seed="3" type="fractalNoise">
-        <animate attributeName="baseFrequency" dur="6s" values="0.0045;0.010;0.0045" repeatCount="indefinite" />
+        <animate attributeName="baseFrequency" dur="12s" values="0.0045;0.010;0.0045" repeatCount="indefinite" />
       </feTurbulence>
-      <feDisplacementMap in="SourceGraphic" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+      <feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </svg>
 
