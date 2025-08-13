@@ -105,7 +105,7 @@ def call_openai(messages):
         print("OpenAI failed")
         return None
 
-# Function to call OpenRouter modeL
+# Function to call OpenRouter model
 def call_openrouter(model, messages, max_tok, stream_bool, temp):
     try:
         result = openrouter_client.chat.completions.create(
