@@ -171,6 +171,12 @@
     }
 
     /* ----- Mobile ----- */
+    :root { --clutch-wavy: url(#wavy); }
+
+    @media (max-width: 768px), (hover: none) and (pointer: coarse) {
+      :root { --clutch-wavy: url(#wavy-mobile); }
+    }
+
     @media (max-width: 768px), (hover: none), (pointer: coarse) {
       .spot { display: none !important; }
     }
@@ -324,12 +330,19 @@
   </footer>
 
   <svg width="0" height="0" style="position:absolute">
-      <filter id="wavy">
-        <feTurbulence baseFrequency="0.0018" numOctaves="1" seed="3" type="fractalNoise">
-          <animate attributeName="baseFrequency" dur="8s" values="0.0018;0.0038;0.0018" repeatCount="indefinite" />
-        </feTurbulence>
-        <feDisplacementMap in="SourceGraphic" scale="10" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
+    <filter id="wavy">
+      <feTurbulence baseFrequency="0.0018" numOctaves="1" seed="3" type="fractalNoise">
+        <animate attributeName="baseFrequency" dur="8s" values="0.0018;0.0038;0.0018" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="14" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="wavy-mobile">
+      <feTurbulence baseFrequency="0.0045" numOctaves="1" seed="3" type="fractalNoise">
+        <animate attributeName="baseFrequency" dur="6s" values="0.0045;0.010;0.0045" repeatCount="indefinite" />
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
   </svg>
 
   <script>
@@ -416,7 +429,7 @@
       equalize('.steps li');
     });
 
-    const wavify = (els)=> els.forEach(el=> el.style.filter = 'url(#wavy)');
+    const wavify = (els)=> els.forEach(el=> el.style.filter = 'var(--clutch-wavy)');
     wavify([document.querySelector('.hero'), ...document.querySelectorAll('.card')]);
 
     const nav = document.querySelector('.nav');
