@@ -1,39 +1,39 @@
-# 🎮 Clutch
+# Clutch
 
-🎙️ **Clutch** is a real-time voice assistant and tactical AI coach for Counter-Strike 2.
+**Clutch** is a real-time voice assistant and tactical AI coach for Counter-Strike 2.
 
-It listens to your voice, analyzes your game state (via GSI + screenshots), and responds with round-winning advice — all spoken back in real time.
+It listens to your voice, analyzes your game state (via GSI + screenshots), and responds with round-winning advice - all spoken back in real time.
 
 ---
 
-## 🎥 Demo
+## Demo
 
 https://github.com/user-attachments/assets/7fa2e61a-6d0f-43a6-953a-538031a7e551
 
 ---
 
-## ✨ Features
+## Features
 
-- 🔊 Wakeword detection — just say **"Hey Jarvis"**
-- 🎙️ Real-time speech transcription (STT)
-- 🧠 Tactical advice powered by streaming LLMs
-- 📸 GSI + screenshot parsing for contextual awareness
-- 🗣️ **TTS pipeline with smart fallback**  
-  - Primary: **Google Chirp 3 HD (streaming)** if a Google key is present  
-  - Fallbacks: **Piper** (low-VRAM) or **Coqui XTTS v2** (high-VRAM) — chosen automatically
-- ⏱ **In-round timer badge** with auto-detection for freezetime, live, bomb plant, and round end
-- 🖼️ **Multi-region screen capture** (radar + alive counters) to boost tactical precision
-- 🪟 **Desktop UI** (PyQt) with live badges for TTS engine and round timer
-- 🗂️ **Secret keys folder** for simple, portable configuration
-- 🛠️ **Auto GSI setup**: copies `gamestate_integration_clutch.cfg` to your CS2 `cfg` folder if missing
+- Wakeword detection - just say **"Hey Jarvis"**
+- Real-time speech transcription (STT)
+- Tactical advice powered by streaming LLMs
+- GSI + screenshot parsing for contextual awareness
+- **TTS pipeline with smart fallback**
+  - Primary: **Google Chirp 3 HD (streaming)** if a Google key is present
+  - Fallbacks: **Piper** (low-VRAM) or **Coqui XTTS v2** (high-VRAM) - chosen automatically
+- **In-round timer badge** with auto-detection for freezetime, live, bomb plant, and round end
+- **Multi-region screen capture** (radar + alive counters) to boost tactical precision
+- **Desktop UI** (PyQt) with live badges for TTS engine and round timer
+- **Secret keys folder** for simple, portable configuration
+- **Auto GSI setup**: copies `gamestate_integration_clutch.cfg` to your CS2 `cfg` folder if missing
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 clutch/
-├── clutch_loop.py                      # Main runtime loop (voice → context → AI → voice)
+├── clutch_loop.py                      # Main runtime loop (voice -> context -> AI -> voice)
 ├── requirements.txt                    # All pip packages required (generated via pip freeze)
 ├── models/                             # TTS & STT models (must download via Google Drive)
 │   ├── Coqui/                          # XTTS model files
@@ -46,9 +46,10 @@ clutch/
 │   └── google_tts_key.json             # optional (enables Google TTS streaming)
 ├── venv/                               # To-be-installed packages & Python environment
 ```
+
 ---
 
-## ⚙️ Setup Instructions (Windows Only)
+## Setup Instructions (Windows Only)
 
 ### 1. Clone the repo
 
@@ -70,7 +71,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-> ⚠️ This installs everything exactly as used in development (from `pip freeze`).
+> **Note:** This installs everything exactly as used in development (from `pip freeze`).
 
 ### 4. Create your `secret_keys` folder
 
@@ -84,20 +85,20 @@ secret_keys/
 ```
 
 - If **`google_tts_key.json` is missing**, Clutch will **automatically** use local TTS: Piper (for low VRAM) or Coqui XTTS (for high VRAM).
-- If **`openai.key` is missing**, the app cannot call the model and won’t work.
+- If **`openai.key` is missing**, the app cannot call the model and won't work.
 
-> ⏳ **Heads-up:** first startup can take a bit (model + audio warmup). Leave the window alone for ~30s on first run.
+> **Heads-up:** First startup can take a bit (model + audio warmup). Leave the window alone for around 30 seconds on first run.
 
 ---
 
-## 📦 Download Required Models
+## Download Required Models
 
 The following folder is **not included** in the GitHub repo due to size limits.
 
-📥 Download from Google Drive:  
-👉 [Clutch folders](https://drive.google.com/drive/folders/1wAPdx7JF7OL3bMVblcqT-djFfrwNv_vB?usp=sharing)
+Download from Google Drive:
+[Clutch folders](https://drive.google.com/drive/folders/1wAPdx7JF7OL3bMVblcqT-djFfrwNv_vB?usp=sharing)
 
-You’ll get:
+You'll get:
 
 ```
 models/
@@ -109,11 +110,11 @@ models/
 ├── tiny.en/     # Wakeword + transcription models
 ```
 
-Place the whole models/ folder inside your Clutch project directory.
+Place the whole `models/` folder inside your Clutch project directory.
 
 ---
 
-## 🚀 Run Clutch
+## Run Clutch
 
 Once everything is installed and models are in place:
 
@@ -121,21 +122,21 @@ Once everything is installed and models are in place:
 python clutch_loop.py
 ```
 
-Say **“Hey Jarvis”**, then start talking. Clutch will:
+Say **"Hey Jarvis"**, then start talking. Clutch will:
 
 - Capture your speech + game context (CS2 GSI + screenshot)
 - Analyze everything with LLMs
 - Respond instantly with tactical voice coaching
 
-> 💡 While Clutch is speaking, you can say **“Hey Jarvis”** again to interrupt and ask something new.
+> **Tip:** While Clutch is speaking, you can say **"Hey Jarvis"** again to interrupt and ask something new.
 
 ---
 
-## 🧩 Notes & Troubleshooting
+## Notes and Troubleshooting
 
-- **GSI auto-setup:** on first run, the app tries to copy `gamestate_integration_clutch.cfg` into your CS2 `cfg` folder. If it fails, run the app as admin and/or copy it manually.
-- **TTS selection:** with no Google key, Clutch auto-picks **Piper** if your GPU has low VRAM (≈ <12GB) or **Coqui XTTS** if there’s plenty.
-- **Round timer badge:** shows `mm:ss` and auto-switches to a bomb timer when planted.
-- **Screenshots:** only captured if a visible “Counter-Strike 2” window is found on your desktop.
+- **GSI auto-setup:** On first run, the app tries to copy `gamestate_integration_clutch.cfg` into your CS2 `cfg` folder. If it fails, run the app as admin and/or copy it manually.
+- **TTS selection:** With no Google key, Clutch auto-picks **Piper** if your GPU has low VRAM (approximately less than 12GB) or **Coqui XTTS** if there's plenty.
+- **Round timer badge:** Shows `mm:ss` and auto-switches to a bomb timer when planted.
+- **Screenshots:** Only captured if a visible "Counter-Strike 2" window is found on your desktop.
 
 ---
